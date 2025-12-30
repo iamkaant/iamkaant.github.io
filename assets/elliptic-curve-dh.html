@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Elliptic Curve Diffie-Hellman</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM only -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body class="bg-gray-100 py-8">
+    <div id="root"></div>
+
+    <script>
+        const { useState, createElement: h } = React;
+
+        function EllipticCurveDH() {
+            const [alicePrivate, setAlicePrivate] = useState(3);
+            const [bobPrivate, setBobPrivate] = useState(5);
+            const [showSteps, setShowSteps] = useState(false);
+            const [hoveredPoint, setHoveredPoint] = useState(null);
+            
+            // Curve parameters: y² = x³ + 2x + 3 (mod 17)
+            const p = 17;
+            const a = 2;
+            const b = 3;
+            const G = { x: 5, y: 6 };
+
+            // Modular arithmetic helpers
+            const mod = (n, m) => ((n % m) + m) % m;
+            
+            const modInverse = (a, m) => {
+                let [old_r, r] = [a, m];
+                let [old_s, s] = [1, 0];
+                
+                while (r !== 0) {
+                    const quotient = Math.floor(old_r / r);
+                    [old_r, r] = [r, old_r - quotient * r];
+                    [old_s, s] = [s, old_s - quotient * s];
+                }
+                
+                return mod(old_s, m);
+            };
+
+            // Check if point is on curve
+            const isOnCurve = (x, y) => {
+                const lhs = mod(y * y, p);
+                const rhs = mod(x * x * x + a * x + b, p);
+                return lhs === rhs;
+            };
+
+            // Generate all points on the curve
+            const generateCurvePoints = () => {
+                const points = [];
+                for (let x = 0; x < p; x++) {
+                    for (let y = 0; y < p; y++) {
+                        if (isOnCurve(x, y)) {
+                            points.push({ x, y, type: 'curve' });
+                        }
+                    }
+                }
+                return points;
+            };
+
+            // Point doubling
+            const pointDouble = (P) => {
+                if (!P || P.infinity) return { infinity: true };
+                
+                const numerator = mod(3 * P.x * P.x + a, p);
+                const denominator = mod(2 * P.y, p);
+                const lambda = mod(numerator * modInverse(denominator, p), p);
+                
+                const x3 = mod(lambda * lambda - 2 * P.x, p);
+                const y3 = mod(lambda * (P.x - x3) - P.y, p);
+                
+                return { x: x3, y: y3, lambda, operation: 'double' };
+            };
+
+            // Point addition
+            const pointAdd = (P, Q) => {
+                if (!P || P.infinity) return Q;
+                if (!Q || Q.infinity) return P;
+                if (P.x === Q.x && P.y === Q.y) return pointDouble(P);
+                if (P.x === Q.x) return { infinity: true };
+                
+                const numerator = mod(Q.y - P.y, p);
+                const denominator = mod(Q.x - P.x, p);
+                const lambda = mod(numerator * modInverse(denominator, p), p);
+                
+                const x3 = mod(lambda * lambda - P.x - Q.x, p);
+                const y3 = mod(lambda * (P.x - x3) - P.y, p);
+                
+                return { x: x3, y: y3, lambda, operation: 'add' };
+            };
+
+            // Scalar multiplication with step tracking
+            const scalarMultiply = (k, P, trackSteps = false) => {
+                const steps = [];
+                let result = { infinity: true };
+                let addend = { ...P };
+                
+                for (let i = 0; i < 8; i++) {
+                    if (k & (1 << i)) {
+                        const oldResult = { ...result };
+                        result = result.infinity ? addend : pointAdd(result, addend);
+                        if (trackSteps) {
+                            steps.push({
+                                bit: i,
+                                value: 1,
+                                addend: { ...addend },
+                                oldResult: oldResult.infinity ? null : oldResult,
+                                newResult: { ...result }
+                            });
+                        }
+                    }
+                    if (i < 7) {
+                        addend = pointDouble(addend);
+                    }
+                }
+                
+                return trackSteps ? { point: result, steps } : result;
+            };
+
+            const curvePoints = generateCurvePoints();
+            
+            // Calculate public keys
+            const alicePublic = scalarMultiply(alicePrivate, G);
+            const bobPublic = scalarMultiply(bobPrivate, G);
+            
+            // Calculate shared secrets
+            const aliceShared = scalarMultiply(alicePrivate, bobPublic);
+            const bobShared = scalarMultiply(bobPrivate, alicePublic);
+            
+            // Get detailed steps for display
+            const aliceSteps = scalarMultiply(alicePrivate, G, true);
+            const bobSteps = scalarMultiply(bobPrivate, G, true);
+            const aliceSharedSteps = scalarMultiply(alicePrivate, bobPublic, true);
+
+            // Custom SVG scatter plot
+            function ScatterPlot() {
+                const width = 600;
+                const height = 400;
+                const padding = 40;
+                const plotWidth = width - 2 * padding;
+                const plotHeight = height - 2 * padding;
+                
+                // Scale functions
+                const scaleX = (x) => padding + (x / (p - 1)) * plotWidth;
+                const scaleY = (y) => height - padding - (y / (p - 1)) * plotHeight;
+                
+                // Prepare all points with their properties
+                const allPoints = [];
+                
+                // Curve points (gray, small)
+                curvePoints.forEach(pt => {
+                    allPoints.push({ ...pt, r: 3, color: '#e0e0e0', stroke: 'none', label: 'Curve Point' });
+                });
+                
+                // Base point G (purple, medium)
+                allPoints.push({ ...G, r: 6, color: '#9333ea', stroke: '#000', strokeWidth: 2, label: '🔵 Base Point G' });
+                
+                // Alice's public key (blue, medium)
+                if (alicePublic && !alicePublic.infinity) {
+                    allPoints.push({ ...alicePublic, r: 6, color: '#3b82f6', stroke: '#000', strokeWidth: 2, label: "👩 Alice's Public Key" });
+                }
+                
+                // Bob's public key (red, medium)
+                if (bobPublic && !bobPublic.infinity) {
+                    allPoints.push({ ...bobPublic, r: 6, color: '#ef4444', stroke: '#000', strokeWidth: 2, label: "👨 Bob's Public Key" });
+                }
+                
+                // Shared secret (green, large)
+                if (aliceShared && !aliceShared.infinity) {
+                    allPoints.push({ ...aliceShared, r: 8, color: '#10b981', stroke: '#000', strokeWidth: 2, label: '🔐 Shared Secret' });
+                }
+                
+                return h('div', { className: 'relative' },
+                    h('svg', { 
+                        width: '100%', 
+                        height: height,
+                        viewBox: `0 0 ${width} ${height}`,
+                        className: 'bg-white rounded'
+                    },
+                        // Grid lines
+                        h('g', { className: 'grid' },
+                            // Vertical lines
+                            ...Array.from({ length: p }, (_, i) => 
+                                h('line', {
+                                    key: `v${i}`,
+                                    x1: scaleX(i),
+                                    y1: padding,
+                                    x2: scaleX(i),
+                                    y2: height - padding,
+                                    stroke: '#e5e7eb',
+                                    strokeWidth: 1,
+                                    strokeDasharray: '3,3'
+                                })
+                            ),
+                            // Horizontal lines
+                            ...Array.from({ length: p }, (_, i) =>
+                                h('line', {
+                                    key: `h${i}`,
+                                    x1: padding,
+                                    y1: scaleY(i),
+                                    x2: width - padding,
+                                    y2: scaleY(i),
+                                    stroke: '#e5e7eb',
+                                    strokeWidth: 1,
+                                    strokeDasharray: '3,3'
+                                })
+                            )
+                        ),
+                        
+                        // Axes
+                        h('g', { className: 'axes' },
+                            // X-axis
+                            h('line', {
+                                x1: padding,
+                                y1: height - padding,
+                                x2: width - padding,
+                                y2: height - padding,
+                                stroke: '#374151',
+                                strokeWidth: 2
+                            }),
+                            // Y-axis
+                            h('line', {
+                                x1: padding,
+                                y1: padding,
+                                x2: padding,
+                                y2: height - padding,
+                                stroke: '#374151',
+                                strokeWidth: 2
+                            }),
+                            // X-axis label
+                            h('text', {
+                                x: width / 2,
+                                y: height - 5,
+                                textAnchor: 'middle',
+                                fontSize: '14',
+                                fill: '#374151',
+                                fontWeight: 'bold'
+                            }, 'x'),
+                            // Y-axis label
+                            h('text', {
+                                x: 10,
+                                y: height / 2,
+                                textAnchor: 'middle',
+                                fontSize: '14',
+                                fill: '#374151',
+                                fontWeight: 'bold',
+                                transform: `rotate(-90, 10, ${height / 2})`
+                            }, 'y')
+                        ),
+                        
+                        // Tick labels
+                        h('g', { className: 'ticks' },
+                            // X-axis ticks
+                            ...Array.from({ length: p }, (_, i) =>
+                                h('text', {
+                                    key: `xt${i}`,
+                                    x: scaleX(i),
+                                    y: height - padding + 15,
+                                    textAnchor: 'middle',
+                                    fontSize: '10',
+                                    fill: '#6b7280'
+                                }, i.toString())
+                            ),
+                            // Y-axis ticks
+                            ...Array.from({ length: p }, (_, i) =>
+                                h('text', {
+                                    key: `yt${i}`,
+                                    x: padding - 10,
+                                    y: scaleY(i) + 4,
+                                    textAnchor: 'end',
+                                    fontSize: '10',
+                                    fill: '#6b7280'
+                                }, i.toString())
+                            )
+                        ),
+                        
+                        // Data points
+                        h('g', { className: 'points' },
+                            allPoints.map((point, idx) =>
+                                h('circle', {
+                                    key: `pt${idx}`,
+                                    cx: scaleX(point.x),
+                                    cy: scaleY(point.y),
+                                    r: point.r,
+                                    fill: point.color,
+                                    stroke: point.stroke || 'none',
+                                    strokeWidth: point.strokeWidth || 0,
+                                    style: { cursor: 'pointer' },
+                                    onMouseEnter: () => setHoveredPoint(point),
+                                    onMouseLeave: () => setHoveredPoint(null)
+                                })
+                            )
+                        )
+                    ),
+                    
+                    // Tooltip
+                    hoveredPoint && h('div', {
+                        className: 'absolute bg-white p-3 border-2 border-gray-300 rounded shadow-lg pointer-events-none',
+                        style: {
+                            left: scaleX(hoveredPoint.x) + 10 + 'px',
+                            top: scaleY(hoveredPoint.y) - 50 + 'px'
+                        }
+                    },
+                        h('p', { className: 'font-bold' }, hoveredPoint.label || 'Point'),
+                        h('p', null, `(${hoveredPoint.x}, ${hoveredPoint.y})`)
+                    )
+                );
+            }
+
+            // Calculation steps component
+            function CalculationSteps({ steps, title, color }) {
+                return h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-200' },
+                    h('h4', { className: 'font-bold mb-2', style: { color } }, title),
+                    h('div', { className: 'space-y-2 text-sm font-mono' },
+                        steps.steps.map((step, idx) =>
+                            h('div', { key: idx, className: 'bg-white p-2 rounded border' },
+                                h('div', { className: 'font-bold' }, `Step ${idx + 1}: Adding ${step.bit === 0 ? 'G' : `${Math.pow(2, step.bit)}G`}`),
+                                step.oldResult && h('div', null, `Previous: (${step.oldResult.x}, ${step.oldResult.y})`),
+                                h('div', null, `Adding: (${step.addend.x}, ${step.addend.y})`),
+                                h('div', { className: 'text-green-600 font-bold' }, `Result: (${step.newResult.x}, ${step.newResult.y})`)
+                            )
+                        )
+                    )
+                );
+            }
+
+            return h('div', { className: 'w-full max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg' },
+                // Header
+                h('div', { className: 'mb-6' },
+                    h('h1', { className: 'text-3xl font-bold mb-2' }, '🔐 Interactive Elliptic Curve Diffie-Hellman'),
+                    h('p', { className: 'text-gray-600' }, 'Curve: y² = x³ + 2x + 3 (mod 17) | Base Point G = (5, 6)')
+                ),
+
+                // Controls
+                h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-6' },
+                    // Alice control
+                    h('div', { className: 'bg-blue-50 p-4 rounded-lg border-2 border-blue-300' },
+                        h('label', { className: 'block font-bold text-blue-700 mb-2' }, `👩 Alice's Private Key: ${alicePrivate}`),
+                        h('input', {
+                            type: 'range',
+                            min: '1',
+                            max: '16',
+                            value: alicePrivate,
+                            onChange: (e) => setAlicePrivate(parseInt(e.target.value)),
+                            className: 'w-full'
+                        }),
+                        h('div', { className: 'mt-2 text-sm' },
+                            h('div', null, 
+                                `Public Key A = ${alicePrivate}·G = `,
+                                h('span', { className: 'font-bold text-blue-700' }, `(${alicePublic.x}, ${alicePublic.y})`)
+                            )
+                        )
+                    ),
+
+                    // Bob control
+                    h('div', { className: 'bg-red-50 p-4 rounded-lg border-2 border-red-300' },
+                        h('label', { className: 'block font-bold text-red-700 mb-2' }, `👨 Bob's Private Key: ${bobPrivate}`),
+                        h('input', {
+                            type: 'range',
+                            min: '1',
+                            max: '16',
+                            value: bobPrivate,
+                            onChange: (e) => setBobPrivate(parseInt(e.target.value)),
+                            className: 'w-full'
+                        }),
+                        h('div', { className: 'mt-2 text-sm' },
+                            h('div', null, 
+                                `Public Key B = ${bobPrivate}·G = `,
+                                h('span', { className: 'font-bold text-red-700' }, `(${bobPublic.x}, ${bobPublic.y})`)
+                            )
+                        )
+                    )
+                ),
+
+                // Shared Secret Display
+                h('div', { className: 'bg-green-50 p-4 rounded-lg border-2 border-green-300 mb-6' },
+                    h('h3', { className: 'font-bold text-green-700 text-xl mb-2' }, '🔐 Shared Secret'),
+                    h('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 text-sm' },
+                        h('div', null,
+                            h('div', { className: 'font-bold' }, "Alice computes:"),
+                            h('div', null, `${alicePrivate}·B = ${alicePrivate}·(${bobPublic.x}, ${bobPublic.y})`),
+                            h('div', { className: 'text-green-700 font-bold text-lg' }, `= (${aliceShared.x}, ${aliceShared.y})`)
+                        ),
+                        h('div', null,
+                            h('div', { className: 'font-bold' }, "Bob computes:"),
+                            h('div', null, `${bobPrivate}·A = ${bobPrivate}·(${alicePublic.x}, ${alicePublic.y})`),
+                            h('div', { className: 'text-green-700 font-bold text-lg' }, `= (${bobShared.x}, ${bobShared.y})`)
+                        )
+                    ),
+                    aliceShared.x === bobShared.x && aliceShared.y === bobShared.y ?
+                        h('div', { className: 'mt-3 text-center font-bold text-green-700 text-xl' }, '✅ Shared secrets match! Secure key established.') :
+                        h('div', { className: 'mt-3 text-center font-bold text-red-700' }, '❌ Error: Secrets don\'t match')
+                ),
+
+                // Visualization
+                h('div', { className: 'bg-gray-50 p-4 rounded-lg border border-gray-300 mb-6' },
+                    h('h3', { className: 'font-bold mb-2' }, 'Curve Visualization'),
+                    h(ScatterPlot),
+                    h('div', { className: 'mt-4 flex flex-wrap gap-4 justify-center text-sm' },
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('div', { className: 'w-4 h-4 rounded-full bg-purple-600 border-2 border-black' }),
+                            h('span', null, 'Base Point G')
+                        ),
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('div', { className: 'w-4 h-4 rounded-full bg-blue-500 border-2 border-black' }),
+                            h('span', null, "Alice's Public")
+                        ),
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('div', { className: 'w-4 h-4 rounded-full bg-red-500 border-2 border-black' }),
+                            h('span', null, "Bob's Public")
+                        ),
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('div', { className: 'w-5 h-5 rounded-full bg-green-500 border-2 border-black' }),
+                            h('span', null, 'Shared Secret')
+                        ),
+                        h('div', { className: 'flex items-center gap-2' },
+                            h('div', { className: 'w-3 h-3 rounded-full bg-gray-300' }),
+                            h('span', null, 'Curve Points')
+                        )
+                    )
+                ),
+
+                // Toggle button
+                h('button', {
+                    onClick: () => setShowSteps(!showSteps),
+                    className: 'w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition mb-4'
+                }, `${showSteps ? '▲ Hide' : '▼ Show'} Detailed Calculation Steps`),
+
+                // Detailed steps (conditional)
+                showSteps && h('div', { className: 'space-y-4' },
+                    h(CalculationSteps, {
+                        steps: aliceSteps,
+                        title: `Alice's Public Key Calculation: ${alicePrivate}·G`,
+                        color: '#3b82f6'
+                    }),
+                    h(CalculationSteps, {
+                        steps: bobSteps,
+                        title: `Bob's Public Key Calculation: ${bobPrivate}·G`,
+                        color: '#ef4444'
+                    }),
+                    h(CalculationSteps, {
+                        steps: aliceSharedSteps,
+                        title: `Alice's Shared Secret: ${alicePrivate}·B = ${alicePrivate}·(${bobPublic.x}, ${bobPublic.y})`,
+                        color: '#10b981'
+                    }),
+                    
+                    // Modular arithmetic explanation
+                    h('div', { className: 'bg-yellow-50 p-4 rounded-lg border border-yellow-300' },
+                        h('h4', { className: 'font-bold text-yellow-800 mb-2' }, '📐 Modular Arithmetic (mod 17)'),
+                        h('div', { className: 'text-sm space-y-2' },
+                            h('p', null, h('strong', null, 'Point Addition Formula:'), ' When P₁ ≠ P₂:'),
+                            h('div', { className: 'font-mono bg-white p-2 rounded' },
+                                'λ = (y₂ - y₁) / (x₂ - x₁) mod 17', h('br'),
+                                'x₃ = λ² - x₁ - x₂ mod 17', h('br'),
+                                'y₃ = λ(x₁ - x₃) - y₁ mod 17'
+                            ),
+                            h('p', null, h('strong', null, 'Point Doubling Formula:'), ' When P₁ = P₂:'),
+                            h('div', { className: 'font-mono bg-white p-2 rounded' },
+                                'λ = (3x₁² + a) / (2y₁) mod 17', h('br'),
+                                'x₃ = λ² - 2x₁ mod 17', h('br'),
+                                'y₃ = λ(x₁ - x₃) - y₁ mod 17'
+                            ),
+                            h('p', { className: 'text-yellow-800' },
+                                h('strong', null, 'Note:'),
+                                ' Division is multiplication by modular inverse. For example, 1/7 mod 17 = 1 × 7⁻¹ mod 17 = 1 × 5 mod 17 = 5 (because 7 × 5 = 35 ≡ 1 mod 17)'
+                            )
+                        )
+                    ),
+
+                    // Security explanation
+                    h('div', { className: 'bg-purple-50 p-4 rounded-lg border border-purple-300' },
+                        h('h4', { className: 'font-bold text-purple-800 mb-2' }, '🔒 Why This Is Secure'),
+                        h('div', { className: 'text-sm space-y-2' },
+                            h('p', null, h('strong', null, 'What an eavesdropper sees:')),
+                            h('ul', { className: 'list-disc list-inside ml-4' },
+                                h('li', null, 'Base point G = (5, 6)'),
+                                h('li', null, `Alice's public key A = (${alicePublic.x}, ${alicePublic.y})`),
+                                h('li', null, `Bob's public key B = (${bobPublic.x}, ${bobPublic.y})`)
+                            ),
+                            h('p', null, h('strong', null, 'What they need to break it:')),
+                            h('ul', { className: 'list-disc list-inside ml-4' },
+                                h('li', null, `Alice's private key ${alicePrivate} (unknown!)`),
+                                h('li', null, `OR Bob's private key ${bobPrivate} (unknown!)`)
+                            ),
+                            h('p', { className: 'text-purple-800 font-bold' },
+                                `The Discrete Log Problem: Given G and A = ${alicePrivate}·G, finding ${alicePrivate} is computationally hard. In this toy example (mod 17), you could try all 16 values. In real X25519 (mod 2²⁵⁵-19), there are 2²⁵⁵ possibilities — impossible to brute force!`
+                            )
+                        )
+                    )
+                ),
+
+                // Educational notes
+                h('div', { className: 'mt-6 bg-blue-50 p-4 rounded-lg border border-blue-300' },
+                    h('h4', { className: 'font-bold text-blue-800 mb-2' }, '💡 Try This:'),
+                    h('ul', { className: 'text-sm space-y-1 list-disc list-inside' },
+                        h('li', null, 'Change the private keys and watch the public keys and shared secret update'),
+                        h('li', null, 'Notice that different private keys lead to different public keys'),
+                        h('li', null, 'The shared secret is always the same for both Alice and Bob'),
+                        h('li', null, 'Hover over points to see their coordinates'),
+                        h('li', null, 'All points stay on the curve (verify: y² ≡ x³ + 2x + 3 mod 17)'),
+                        h('li', null, 'Real X25519 uses the exact same math, just with 77-digit numbers instead of mod 17!')
+                    )
+                ),
+
+                // Footer
+                h('div', { className: 'mt-6 text-center text-sm text-gray-500' },
+                    h('p', null, 'Interactive visualization of Elliptic Curve Diffie-Hellman key exchange'),
+                    h('p', { className: 'mt-1' }, 'Built with React and native SVG • No external chart libraries required')
+                )
+            );
+        }
+
+        // Wait for React to load, then render
+        window.addEventListener('load', function() {
+            console.log('Loading app...');
+            console.log('React available:', typeof React !== 'undefined');
+            console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
+            
+            if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+                document.getElementById('root').innerHTML = 
+                    '<div style="padding: 40px; text-align: center;">' +
+                    '<h2 style="color: red;">❌ Error Loading</h2>' +
+                    '<p>React libraries failed to load. Check your internet connection.</p>' +
+                    '<p><strong>Tip:</strong> Try refreshing the page or opening in a different browser.</p>' +
+                    '</div>';
+                return;
+            }
+
+            try {
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(React.createElement(EllipticCurveDH));
+                console.log('✅ App rendered successfully!');
+            } catch (error) {
+                console.error('❌ Error rendering app:', error);
+                document.getElementById('root').innerHTML = 
+                    '<div style="padding: 40px; text-align: center;">' +
+                    '<h2 style="color: red;">❌ Rendering Error</h2>' +
+                    '<p>Failed to render the visualization.</p>' +
+                    '<p>Error: ' + error.message + '</p>' +
+                    '</div>';
+            }
+        });
+    </script>
+</body>
+</html>
