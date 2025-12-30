@@ -6,7 +6,8 @@ categories: learning
 ---
 
 I was always fascinated with the way modern cryptography works. While learning about elliptic curves, I used Anthropic Claude to build an interactive visualization of Diffie-Hellman key exchange. You can explore it below.
-If you're interested in learning more about how DH key exchange works, I highly recommend this [blog post][blog-post]: 
+
+If you're interested in learning more about how DH key exchange works, I highly recommend this [blog post][blog-post].
 
 <iframe src="/assets/elliptic-curve-dh.html" 
         width="100%" 
