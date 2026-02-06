@@ -496,8 +496,122 @@
     // ===========================
     // Molecular Operations
     // ===========================
+    // --- Molecular graph parsing for JS-based MCS ---
+    function parseMolGraph(molblock) {
+        const lines = molblock.split('\n');
+        let countsIdx = -1;
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
+                countsIdx = i; break;
+            }
+        }
+        if (countsIdx < 0) return null;
+        const nAtoms = parseInt(lines[countsIdx].substring(0, 3).trim());
+        const nBonds = parseInt(lines[countsIdx].substring(3, 6).trim());
+        const atoms = [];
+        for (let i = 0; i < nAtoms; i++) {
+            const line = lines[countsIdx + 1 + i];
+            const element = line.substring(31, 34).trim();
+            atoms.push({ element, adj: {} }); // adj: neighborIdx -> bondType
+        }
+        for (let i = 0; i < nBonds; i++) {
+            const line = lines[countsIdx + 1 + nAtoms + i];
+            const a1 = parseInt(line.substring(0, 3).trim()) - 1;
+            const a2 = parseInt(line.substring(3, 6).trim()) - 1;
+            const bt = parseInt(line.substring(6, 9).trim());
+            atoms[a1].adj[a2] = bt;
+            atoms[a2].adj[a1] = bt;
+        }
+        return atoms;
+    }
+
+    function bondsCompatible(bt1, bt2) {
+        if (bt1 === bt2) return true;
+        // Allow single(1)/double(2)/aromatic(4) to match each other (Kekule flexibility)
+        if (bt1 > 0 && bt2 > 0 && bt1 !== 3 && bt2 !== 3) return true;
+        return false;
+    }
+
+    // BFS seed-and-extend MCS: grow a mapping greedily from a seed pair
+    function extendMapping(g1, g2, fwd, rev) {
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const [i1, j1] of fwd) {
+                for (const i2s of Object.keys(g1[i1].adj)) {
+                    const i2 = parseInt(i2s);
+                    if (fwd.has(i2)) continue;
+                    const bt1 = g1[i1].adj[i2];
+                    // Find best compatible unmapped neighbor of j1 in g2
+                    let bestJ2 = -1, bestScore = -1;
+                    for (const j2s of Object.keys(g2[j1].adj)) {
+                        const j2 = parseInt(j2s);
+                        if (rev.has(j2)) continue;
+                        if (g1[i2].element !== g2[j2].element) continue;
+                        if (!bondsCompatible(bt1, g2[j1].adj[j2])) continue;
+                        // Check consistency with all existing mappings
+                        let ok = true;
+                        for (const [mi, mj] of fwd) {
+                            const b1 = g1[i2].adj[mi];
+                            const b2 = g2[j2].adj[mj];
+                            if ((b1 !== undefined) !== (b2 !== undefined)) { ok = false; break; }
+                        }
+                        if (!ok) continue;
+                        // Prefer atoms with more neighbors (better extension potential)
+                        const score = Object.keys(g2[j2].adj).length;
+                        if (score > bestScore) { bestScore = score; bestJ2 = j2; }
+                    }
+                    if (bestJ2 >= 0) {
+                        fwd.set(i2, bestJ2);
+                        rev.set(bestJ2, i2);
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    // JavaScript MCS: try multiple seeds and keep the largest mapping
+    function findMCS_JS(refMol, mol) {
+        const g1 = parseMolGraph(refMol.get_molblock());
+        const g2 = parseMolGraph(mol.get_molblock());
+        if (!g1 || !g2) return [];
+
+        let bestFwd = new Map();
+        const startTime = Date.now();
+        const TIMEOUT = 3000;
+
+        // Count element frequencies in g1 to prioritize rare elements as seeds
+        const elCount = {};
+        g1.forEach(a => { elCount[a.element] = (elCount[a.element] || 0) + 1; });
+        const atomOrder = g1.map((_, i) => i).sort((a, b) =>
+            (elCount[g1[a].element] || 0) - (elCount[g1[b].element] || 0)
+        );
+
+        for (const i of atomOrder) {
+            if (Date.now() - startTime > TIMEOUT) break;
+            for (let j = 0; j < g2.length; j++) {
+                if (g1[i].element !== g2[j].element) continue;
+                if (Date.now() - startTime > TIMEOUT) break;
+
+                const fwd = new Map([[i, j]]);
+                const rev = new Map([[j, i]]);
+                extendMapping(g1, g2, fwd, rev);
+
+                if (fwd.size > bestFwd.size) {
+                    bestFwd = new Map(fwd);
+                    // Early exit if we matched most atoms
+                    if (bestFwd.size >= Math.min(g1.length, g2.length) - 2) break;
+                }
+            }
+            if (bestFwd.size >= Math.min(g1.length, g2.length) - 2) break;
+        }
+
+        return [...bestFwd.values()]; // matched atom indices in mol (g2)
+    }
+
     function findMatchingAtoms(refMol, mol) {
-        // Strategy 1: Try MCS via MolList API (most accurate)
+        // Strategy 1: Try MCS via MolList API (if compiled in)
         if (typeof RDKit.get_mcs_as_smarts === 'function') {
             let molList = null;
             try {
@@ -541,6 +655,14 @@
                 if (Array.isArray(atoms) && atoms.length > 0) return atoms;
             }
         } catch(e) {}
+
+        // Strategy 3: JavaScript-based MCS (graph matching fallback)
+        try {
+            const matched = findMCS_JS(refMol, mol);
+            if (matched.length > 0) return matched;
+        } catch(e) {
+            console.warn('JS MCS failed', e);
+        }
 
         return [];
     }
