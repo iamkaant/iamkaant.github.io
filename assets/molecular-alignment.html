@@ -187,6 +187,23 @@
                         <option value="__none__">Catalog ID only</option>
                     </select>
                 </label>
+                <div class="sep"></div>
+                <label>Atom Labels:
+                    <select id="atomFontSelect" onchange="renderGrid()">
+                        <option value="0.4">Small</option>
+                        <option value="0.6" selected>Medium</option>
+                        <option value="0.8">Large</option>
+                        <option value="1.0">XL</option>
+                    </select>
+                </label>
+                <label>Bond Width:
+                    <select id="bondWidthSelect" onchange="renderGrid()">
+                        <option value="1.0">Thin</option>
+                        <option value="2.0" selected>Medium</option>
+                        <option value="3.0">Thick</option>
+                        <option value="4.0">XL</option>
+                    </select>
+                </label>
             </div>
         </div>
 
@@ -852,6 +869,8 @@
             return '<svg viewBox="0 0 ' + size + ' ' + size + '"><text x="50%" y="50%" text-anchor="middle">Error</text></svg>';
         }
 
+        const baseFontSize = parseFloat(document.getElementById('atomFontSelect').value);
+        const bondLineWidth = parseFloat(document.getElementById('bondWidthSelect').value);
         const details = JSON.stringify({
             atoms: Array.from(molData.highlightAtoms),
             bonds: [],
@@ -859,7 +878,8 @@
             height: size,
             highlightColour: HIGHLIGHT_COLOR,
             highlightRadius: 0.4,
-            bondLineWidth: 2.0
+            bondLineWidth: bondLineWidth,
+            baseFontSize: baseFontSize
         });
 
         let svg;
