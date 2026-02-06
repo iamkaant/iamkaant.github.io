@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Structure Alignment &amp; Highlighting</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+
+        /* Loading overlay */
+        #loading { position: fixed; inset: 0; background: #fff; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e0e0e0; border-top-color: #1976D2;
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading p { font-size: 16px; color: #666; }
+        #loading .sub { font-size: 13px; color: #999; margin-top: 6px; }
+
+        /* Header */
+        .header { background: #1976D2; color: #fff; padding: 12px 20px; font-size: 18px; font-weight: 600;
+            display: flex; align-items: center; gap: 10px; }
+        .header .version { font-size: 12px; opacity: 0.7; font-weight: 400; }
+
+        /* Sections */
+        .section { background: #fff; margin: 8px 12px; padding: 12px 16px; border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 13px; font-weight: 600; color: #666; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        /* Input section */
+        .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .input-row label { font-size: 13px; font-weight: 500; white-space: nowrap; }
+        .input-row input[type="text"], .input-row select { padding: 6px 10px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 14px; }
+        .input-row input[type="text"] { flex: 1; min-width: 150px; }
+        .input-row input[type="file"] { font-size: 13px; }
+        .btn { padding: 6px 14px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer;
+            font-weight: 500; transition: background 0.2s; white-space: nowrap; }
+        .btn-primary { background: #4CAF50; color: #fff; }
+        .btn-primary:hover { background: #43A047; }
+        .btn-primary:disabled { background: #a5d6a7; cursor: not-allowed; }
+        .btn-default { background: #e0e0e0; color: #333; }
+        .btn-default:hover { background: #d0d0d0; }
+        .btn-active { background: #1976D2; color: #fff; }
+        .btn-active:hover { background: #1565C0; }
+        .btn-danger { background: #e53935; color: #fff; }
+        .btn-danger:hover { background: #c62828; }
+        .btn-export { background: #7B1FA2; color: #fff; }
+        .btn-export:hover { background: #6A1B9A; }
+
+        /* Toolbar */
+        .toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .toolbar .sep { width: 1px; height: 24px; background: #ddd; margin: 0 4px; }
+
+        /* Settings row */
+        .settings-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+        .settings-row select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+
+        /* Info bar */
+        .info-bar { padding: 8px 16px; margin: 0 12px; font-size: 13px; border-radius: 4px; }
+        .info-bar.tip { background: #E3F2FD; color: #1565C0; }
+        .info-bar.edit { background: #FFF3E0; color: #E65100; font-weight: 500; }
+
+        /* Grid */
+        #grid { display: grid; gap: 12px; padding: 12px; min-height: 200px; }
+        .mol-card { background: #fff; border: 2px solid #e0e0e0; border-radius: 6px; overflow: hidden;
+            cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; }
+        .mol-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+        .mol-card.selected { border-color: #1976D2; box-shadow: 0 0 0 2px rgba(25,118,210,0.3); }
+        .mol-card.edit-mode { cursor: crosshair; }
+        .mol-svg-container { width: 100%; aspect-ratio: 1; display: flex; align-items: center;
+            justify-content: center; background: #fff; }
+        .mol-svg-container svg { width: 100%; height: 100%; }
+        .mol-label { padding: 6px 8px; text-align: center; border-top: 1px solid #eee; background: #fafafa; }
+        .mol-label .catalog-id { font-weight: 600; font-size: 14px; }
+        .mol-label .mol-prop { font-size: 12px; color: #666; margin-top: 2px; }
+
+        /* Status bar */
+        #statusBar { background: #263238; color: #B0BEC5; padding: 6px 16px; font-size: 12px;
+            font-family: monospace; position: sticky; bottom: 0; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex;
+            align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: #fff; border-radius: 8px; width: 420px; max-height: 80vh; display: flex;
+            flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .modal h3 { padding: 16px; border-bottom: 1px solid #eee; font-size: 16px; }
+        .modal .atom-list { flex: 1; overflow-y: auto; padding: 8px 16px; max-height: 400px; }
+        .modal .atom-list label { display: block; padding: 4px 0; font-size: 13px; cursor: pointer; }
+        .modal .atom-list label:hover { background: #f5f5f5; }
+        .modal .atom-list input[type="checkbox"] { margin-right: 8px; }
+        .modal .modal-buttons { padding: 12px 16px; border-top: 1px solid #eee;
+            display: flex; gap: 6px; justify-content: flex-end; }
+
+        /* Empty state */
+        .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 15px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .input-row { flex-direction: column; align-items: stretch; }
+            .toolbar { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading overlay -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading RDKit (Chemistry Toolkit)...</p>
+        <p class="sub">This may take a few seconds on first visit</p>
+    </div>
+
+    <!-- Main app -->
+    <div id="app" style="display:none;">
+        <div class="header">
+            Molecular Structure Alignment &amp; Highlighting
+            <span class="version" id="rdkitVersion"></span>
+        </div>
+
+        <!-- Input section -->
+        <div class="section">
+            <div class="section-title">Input</div>
+            <div class="input-row">
+                <label>File:</label>
+                <input type="file" id="fileInput" accept=".sdf,.smi,.smiles,.txt,.csv,.tsv">
+                <label>Reference SMILES:</label>
+                <input type="text" id="refSmiles" placeholder="e.g. c1ccc(CC)cc1" style="min-width:200px;">
+                <label>Columns:</label>
+                <select id="columnsSelect">
+                    <option>1</option><option>2</option><option>3</option>
+                    <option selected>4</option><option>5</option><option>6</option>
+                    <option>7</option><option>8</option>
+                </select>
+                <button class="btn btn-primary" id="loadBtn" onclick="loadAndAlign()" disabled>Load &amp; Align</button>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="section">
+            <div class="toolbar">
+                <button class="btn btn-default" id="editModeBtn" onclick="toggleEditMode()">Edit Highlights</button>
+                <div class="sep"></div>
+                <button class="btn btn-default" onclick="openAtomSelector()">Atom List...</button>
+                <button class="btn btn-default" onclick="resetHighlights()">Reset Highlights</button>
+                <button class="btn btn-default" onclick="clearHighlights()">Clear Highlights</button>
+                <div class="sep"></div>
+                <button class="btn btn-default" onclick="rotateSelected(90)">Rotate CW 90&#176;</button>
+                <button class="btn btn-default" onclick="rotateSelected(-90)">Rotate CCW 90&#176;</button>
+                <div class="sep"></div>
+                <button class="btn btn-default" onclick="mirrorSelected('h')">Mirror Horiz</button>
+                <button class="btn btn-default" onclick="mirrorSelected('v')">Mirror Vert</button>
+                <div class="sep"></div>
+                <button class="btn btn-export" onclick="exportGrid()">Export PNG</button>
+                <button class="btn btn-default" onclick="resetSelected()">Reset Selected</button>
+            </div>
+        </div>
+
+        <!-- Label settings -->
+        <div class="section">
+            <div class="settings-row">
+                <label>Label Font Size:
+                    <select id="fontSizeSelect" onchange="updateLabels()">
+                        <option>12</option><option>14</option><option selected>16</option>
+                        <option>18</option><option>20</option><option>24</option>
+                    </select>
+                </label>
+                <label>Second Line:
+                    <select id="propSelect" onchange="updateLabels()">
+                        <option value="__none__">Catalog ID only</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <!-- Info bar -->
+        <div class="info-bar tip" id="infoBar">
+            Tip: Load a file and reference SMILES, then click molecules to select. Enable "Edit Highlights" to click atoms.
+        </div>
+
+        <!-- Molecule grid -->
+        <div id="grid">
+            <div class="empty-state">
+                <div class="icon">&#9878;</div>
+                <p>Load an SDF or SMILES file with a reference SMILES to begin</p>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div id="statusBar">Ready</div>
+    </div>
+
+    <!-- Atom selector modal (hidden) -->
+    <div id="atomModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAtomSelector()">
+        <div class="modal">
+            <h3>Select Atoms to Highlight</h3>
+            <div class="atom-list" id="atomCheckboxList"></div>
+            <div class="modal-buttons">
+                <button class="btn btn-default" onclick="atomSelectAll()">All</button>
+                <button class="btn btn-default" onclick="atomSelectNone()">None</button>
+                <button class="btn btn-default" onclick="atomInvert()">Invert</button>
+                <button class="btn btn-primary" onclick="applyAtomSelection()">OK</button>
+                <button class="btn btn-default" onclick="closeAtomSelector()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RDKit.js WASM -->
+    <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+
+    <script>
+    // ===========================
+    // Global State
+    // ===========================
+    let RDKit = null;
+    let molecules = [];       // Array of molecule data objects
+    let selectedIdx = -1;     // Index of selected molecule (-1 = none)
+    let editMode = false;     // Whether edit highlights mode is on
+    const SVG_SIZE = 350;     // SVG render size in pixels
+    const HIGHLIGHT_COLOR = [0.596, 0.984, 0.596]; // Light green
+
+    // ===========================
+    // Initialization
+    // ===========================
+    window.addEventListener('DOMContentLoaded', function() {
+        initRDKitModule({
+            locateFile: (file) => `https://unpkg.com/@rdkit/rdkit/dist/${file}`
+        }).then(function(instance) {
+            RDKit = instance;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('loadBtn').disabled = false;
+            document.getElementById('rdkitVersion').textContent = 'RDKit ' + RDKit.version();
+            updateStatus('RDKit loaded. Ready to process molecules.');
+        }).catch(function(err) {
+            document.getElementById('loading').innerHTML =
+                '<p style="color:#c62828;font-size:16px;">Failed to load RDKit</p>' +
+                '<p class="sub">' + err.message + '</p>' +
+                '<p class="sub" style="margin-top:12px;">Try refreshing the page or using a modern browser (Chrome, Firefox, Edge).</p>';
+        });
+    });
+
+    // ===========================
+    // File Loading & Parsing
+    // ===========================
+    async function loadAndAlign() {
+        const fileInput = document.getElementById('fileInput');
+        const refSmiles = document.getElementById('refSmiles').value.trim();
+
+        if (!fileInput.files.length) {
+            return showAlert('Please select a molecule file (SDF or SMILES).');
+        }
+        if (!refSmiles) {
+            return showAlert('Please enter a reference SMILES string.');
+        }
+
+        // Validate reference SMILES
+        const refMol = RDKit.get_mol(refSmiles);
+        if (!refMol || !refMol.is_valid()) {
+            if (refMol) refMol.delete();
+            return showAlert('Invalid reference SMILES: ' + refSmiles);
+        }
+
+        updateStatus('Reading file...');
+        const file = fileInput.files[0];
+        const text = await file.text();
+        const fileName = file.name.toLowerCase();
+
+        let rawMols;
+        try {
+            if (fileName.endsWith('.sdf')) {
+                rawMols = parseSDF(text);
+            } else {
+                rawMols = parseSMILES(text);
+            }
+        } catch (e) {
+            refMol.delete();
+            return showAlert('Error parsing file: ' + e.message);
+        }
+
+        if (!rawMols || rawMols.length === 0) {
+            refMol.delete();
+            return showAlert('No valid molecules found in file.');
+        }
+
+        updateStatus('Processing ' + rawMols.length + ' molecules...');
+
+        // Clean up old molecules
+        cleanupMolecules();
+
+        // Generate 2D coords for reference
+        refMol.set_new_coords();
+        try { refMol.normalize_depiction(); } catch(e) {}
+        try { refMol.straighten_depiction(); } catch(e) {}
+
+        // Process each molecule
+        const allPropertyNames = new Set();
+        let mcsSuccessCount = 0;
+
+        for (let i = 0; i < rawMols.length; i++) {
+            const raw = rawMols[i];
+            const mol = raw.mol;
+
+            if (!mol || !mol.is_valid()) {
+                if (mol) mol.delete();
+                continue;
+            }
+
+            // Collect property names
+            for (const key of Object.keys(raw.properties)) {
+                if (key !== 'Catalog ID' && key !== '_Name') allPropertyNames.add(key);
+            }
+
+            // Find matching atoms (MCS or substructure match)
+            let matchAtoms = [];
+            try {
+                matchAtoms = findMatchingAtoms(refMol, mol);
+                if (matchAtoms.length > 0) mcsSuccessCount++;
+            } catch(e) {
+                console.warn('Match finding failed for molecule ' + i, e);
+            }
+
+            // Align to reference
+            try {
+                mol.generate_aligned_coords(refMol, JSON.stringify({
+                    useCoordGen: false,
+                    acceptFailure: true,
+                    allowRGroups: false
+                }));
+            } catch(e) {
+                // Fallback: just generate 2D coords
+                try { mol.set_new_coords(); } catch(e2) {}
+            }
+
+            try { mol.normalize_depiction(); } catch(e) {}
+            try { mol.straighten_depiction(); } catch(e) {}
+
+            // Get aligned molblock (base for future transforms)
+            const alignedMolblock = mol.get_molblock();
+
+            // Determine highlight atoms (all atoms NOT in the match)
+            const numAtoms = mol.get_num_atoms();
+            const matchSet = new Set(matchAtoms);
+            const highlightAtoms = new Set();
+            for (let a = 0; a < numAtoms; a++) {
+                if (!matchSet.has(a)) highlightAtoms.add(a);
+            }
+
+            molecules.push({
+                mol: mol,
+                smiles: raw.smiles || mol.get_smiles(),
+                alignedMolblock: alignedMolblock,
+                catalogId: raw.properties['Catalog ID'] || ('Mol_' + (i + 1)),
+                properties: raw.properties,
+                matchAtoms: matchAtoms,
+                highlightAtoms: highlightAtoms,
+                originalHighlightAtoms: new Set(highlightAtoms),
+                rotation: 0,
+                mirrorH: false,
+                mirrorV: false
+            });
+        }
+
+        refMol.delete();
+
+        // Update property selector
+        updatePropertySelector(allPropertyNames);
+
+        // Render grid
+        selectedIdx = -1;
+        renderGrid();
+
+        updateStatus(
+            'Loaded ' + molecules.length + ' molecules. ' +
+            'MCS matches: ' + mcsSuccessCount + '/' + molecules.length
+        );
+    }
+
+    function parseSDF(text) {
+        const blocks = text.split('$$$$');
+        const rawMols = [];
+
+        for (const block of blocks) {
+            const trimmed = block.trim();
+            if (!trimmed) continue;
+
+            // Split into molblock and properties
+            const endIdx = trimmed.indexOf('M  END');
+            if (endIdx < 0) continue;
+
+            const molblock = trimmed.substring(0, endIdx + 6);
+            const propsText = trimmed.substring(endIdx + 6);
+
+            const mol = RDKit.get_mol(molblock);
+            if (!mol || !mol.is_valid()) {
+                if (mol) mol.delete();
+                continue;
+            }
+
+            // Parse SDF properties
+            const properties = {};
+            const propRegex = />\s*<([^>]+)>\s*\n([^\n]*)/g;
+            let match;
+            while ((match = propRegex.exec(propsText)) !== null) {
+                properties[match[1].trim()] = match[2].trim();
+            }
+
+            // Use molecule name from molblock (first line) as fallback catalog ID
+            const firstLine = trimmed.split('\n')[0].trim();
+            if (!properties['Catalog ID'] && firstLine) {
+                properties['Catalog ID'] = firstLine;
+            }
+
+            rawMols.push({ mol, smiles: null, properties });
+        }
+
+        return rawMols;
+    }
+
+    function parseSMILES(text) {
+        const lines = text.split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+        if (lines.length === 0) return [];
+
+        const rawMols = [];
+        let headers = null;
+
+        for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+            const line = lines[lineNum].trim();
+            const parts = line.includes('\t') ? line.split('\t') : line.split(/\s+/);
+            if (parts.length === 0) continue;
+
+            // Detect header row
+            if (headers === null) {
+                const firstUpper = parts[0].toUpperCase();
+                if (['SMILES', 'SMI', 'SMILE', 'CANONICAL_SMILES', 'CANONICAL SMILES'].includes(firstUpper)
+                    || !isLikelySmiles(parts[0])) {
+                    headers = parts;
+                    continue;
+                } else {
+                    headers = ['SMILES', 'Catalog ID'].concat(
+                        Array.from({length: Math.max(0, parts.length - 2)}, (_, i) => 'Property_' + (i + 2))
+                    );
+                }
+            }
+
+            // Parse SMILES
+            const smiles = parts[0];
+            const mol = RDKit.get_mol(smiles);
+            if (!mol || !mol.is_valid()) {
+                if (mol) mol.delete();
+                continue;
+            }
+
+            const properties = {};
+            // Catalog ID (second column or default)
+            properties['Catalog ID'] = (parts.length > 1 && parts[1].trim())
+                ? parts[1].trim() : ('Mol_' + (lineNum + 1));
+
+            // Additional properties
+            for (let col = 2; col < parts.length; col++) {
+                if (col < headers.length) {
+                    const propName = headers[col].trim();
+                    const propValue = parts[col].trim();
+                    if (propValue) properties[propName] = propValue;
+                }
+            }
+
+            rawMols.push({ mol, smiles, properties });
+        }
+
+        return rawMols;
+    }
+
+    function isLikelySmiles(text) {
+        const smilesChars = new Set('cCnNoOpPsSFfIiBbr[]()=#@+-/\\123456789.%');
+        let common = 0;
+        for (const ch of text) {
+            if (smilesChars.has(ch)) common++;
+        }
+        return text.length > 0 && (common / text.length) > 0.5;
+    }
+
+    // ===========================
+    // Molecular Operations
+    // ===========================
+    function findMatchingAtoms(refMol, mol) {
+        // Strategy 1: Try MCS (most accurate)
+        if (typeof RDKit.get_mcs_as_smarts === 'function') {
+            try {
+                const mcsSmarts = RDKit.get_mcs_as_smarts(refMol, mol, JSON.stringify({
+                    timeout: 5,
+                    maximizeBonds: true,
+                    ringMatchesRingOnly: true,
+                    completeRingsOnly: true
+                }));
+                if (mcsSmarts && mcsSmarts.length > 0) {
+                    const qmol = RDKit.get_qmol(mcsSmarts);
+                    if (qmol && qmol.is_valid()) {
+                        const matchStr = mol.get_substruct_match(qmol);
+                        qmol.delete();
+                        if (matchStr) {
+                            const parsed = JSON.parse(matchStr);
+                            const atoms = parsed.atoms || parsed;
+                            if (Array.isArray(atoms) && atoms.length > 0) return atoms;
+                        }
+                    } else {
+                        if (qmol) qmol.delete();
+                    }
+                }
+            } catch(e) {
+                console.warn('MCS failed, trying substructure match', e);
+            }
+        }
+
+        // Strategy 2: Direct substructure match (ref is substructure of mol)
+        try {
+            const matchStr = mol.get_substruct_match(refMol);
+            if (matchStr) {
+                const parsed = JSON.parse(matchStr);
+                const atoms = parsed.atoms || parsed;
+                if (Array.isArray(atoms) && atoms.length > 0) return atoms;
+            }
+        } catch(e) {}
+
+        return [];
+    }
+
+    function transformMolblock(molblock, rotation, mirrorH, mirrorV) {
+        if (rotation === 0 && !mirrorH && !mirrorV) return molblock;
+
+        const lines = molblock.split('\n');
+        // Counts line is at index 3 in V2000 format
+        let countsLineIdx = -1;
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
+                countsLineIdx = i;
+                break;
+            }
+        }
+        if (countsLineIdx < 0) return molblock;
+
+        const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+        if (isNaN(numAtoms) || numAtoms <= 0) return molblock;
+
+        const atomStartIdx = countsLineIdx + 1;
+        const rad = (rotation % 360) * Math.PI / 180;
+        const cosR = Math.cos(rad);
+        const sinR = Math.sin(rad);
+
+        for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+            const line = lines[i];
+            if (line.length < 30) continue;
+
+            let x = parseFloat(line.substring(0, 10).trim());
+            let y = parseFloat(line.substring(10, 20).trim());
+            const rest = line.substring(20);
+
+            if (isNaN(x) || isNaN(y)) continue;
+
+            // Apply rotation
+            const rx = x * cosR - y * sinR;
+            const ry = x * sinR + y * cosR;
+            x = rx;
+            y = ry;
+
+            // Apply mirroring
+            if (mirrorH) x = -x;
+            if (mirrorV) y = -y;
+
+            lines[i] = x.toFixed(4).padStart(10) + y.toFixed(4).padStart(10) + rest;
+        }
+
+        return lines.join('\n');
+    }
+
+    function parseMolblockAtomCoords(molblock) {
+        const lines = molblock.split('\n');
+        let countsLineIdx = -1;
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
+                countsLineIdx = i;
+                break;
+            }
+        }
+        if (countsLineIdx < 0) return [];
+
+        const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+        if (isNaN(numAtoms) || numAtoms <= 0) return [];
+
+        const coords = [];
+        const atomStartIdx = countsLineIdx + 1;
+        for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+            const line = lines[i];
+            if (line.length < 20) { coords.push({x: 0, y: 0}); continue; }
+            const x = parseFloat(line.substring(0, 10).trim());
+            const y = parseFloat(line.substring(10, 20).trim());
+            coords.push({ x: isNaN(x) ? 0 : x, y: isNaN(y) ? 0 : y });
+        }
+        return coords;
+    }
+
+    function coordsToScreenPos(atomCoords, svgWidth, svgHeight) {
+        if (atomCoords.length === 0) return [];
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const {x, y} of atomCoords) {
+            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        }
+        const molW = maxX - minX || 1;
+        const molH = maxY - minY || 1;
+        // RDKit uses ~13% padding on each side
+        const padding = 0.13;
+        const availW = svgWidth * (1 - 2 * padding);
+        const availH = svgHeight * (1 - 2 * padding);
+        const scale = Math.min(availW / molW, availH / molH);
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        return atomCoords.map(({x, y}) => ({
+            x: (x - cx) * scale + svgWidth / 2,
+            y: -(y - cy) * scale + svgHeight / 2
+        }));
+    }
+
+    // ===========================
+    // Rendering
+    // ===========================
+    function renderGrid() {
+        const grid = document.getElementById('grid');
+        const columns = parseInt(document.getElementById('columnsSelect').value);
+        grid.style.gridTemplateColumns = 'repeat(' + columns + ', 1fr)';
+        grid.innerHTML = '';
+
+        if (molecules.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><div class="icon">&#9878;</div>' +
+                '<p>Load an SDF or SMILES file with a reference SMILES to begin</p></div>';
+            return;
+        }
+
+        for (let i = 0; i < molecules.length; i++) {
+            grid.appendChild(createMolCard(i));
+        }
+    }
+
+    function createMolCard(idx) {
+        const molData = molecules[idx];
+        const card = document.createElement('div');
+        card.className = 'mol-card' + (idx === selectedIdx ? ' selected' : '') +
+                         (editMode ? ' edit-mode' : '');
+        card.setAttribute('data-mol-idx', idx);
+
+        // SVG container
+        const svgContainer = document.createElement('div');
+        svgContainer.className = 'mol-svg-container';
+        svgContainer.innerHTML = renderMoleculeSvg(molData, SVG_SIZE);
+
+        // Add invisible click targets for atoms
+        addAtomClickTargets(svgContainer, molData, idx);
+
+        card.appendChild(svgContainer);
+
+        // Labels
+        const label = document.createElement('div');
+        label.className = 'mol-label';
+        const fontSize = document.getElementById('fontSizeSelect').value + 'px';
+
+        const idDiv = document.createElement('div');
+        idDiv.className = 'catalog-id';
+        idDiv.style.fontSize = fontSize;
+        idDiv.textContent = molData.catalogId;
+        label.appendChild(idDiv);
+
+        // Second line (property)
+        const propKey = document.getElementById('propSelect').value;
+        if (propKey !== '__none__' && molData.properties[propKey]) {
+            const propDiv = document.createElement('div');
+            propDiv.className = 'mol-prop';
+            propDiv.style.fontSize = fontSize;
+            const val = molData.properties[propKey];
+            propDiv.textContent = propKey === 'Price, USD' ? ('Price: $' + val) : (propKey + ': ' + val);
+            label.appendChild(propDiv);
+        }
+
+        card.appendChild(label);
+
+        // Click handler for selection
+        card.addEventListener('click', function(e) {
+            // Don't select if clicking an atom target in edit mode
+            if (e.target.closest('circle[data-atom-idx]')) return;
+            if (!editMode) selectMolecule(idx);
+        });
+
+        return card;
+    }
+
+    function renderMoleculeSvg(molData, size) {
+        // Get transformed molblock
+        const tMolblock = transformMolblock(
+            molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV
+        );
+
+        // Create temp mol from transformed molblock
+        const tempMol = RDKit.get_mol(tMolblock);
+        if (!tempMol || !tempMol.is_valid()) {
+            if (tempMol) tempMol.delete();
+            return '<svg viewBox="0 0 ' + size + ' ' + size + '"><text x="50%" y="50%" text-anchor="middle">Error</text></svg>';
+        }
+
+        const details = JSON.stringify({
+            atoms: Array.from(molData.highlightAtoms),
+            bonds: [],
+            width: size,
+            height: size,
+            highlightColour: HIGHLIGHT_COLOR,
+            highlightRadius: 0.4,
+            bondLineWidth: 2.0
+        });
+
+        let svg;
+        try {
+            svg = tempMol.get_svg_with_highlights(details);
+        } catch(e) {
+            svg = tempMol.get_svg(size, size);
+        }
+
+        tempMol.delete();
+        return svg;
+    }
+
+    function addAtomClickTargets(svgContainer, molData, molIdx) {
+        const tMolblock = transformMolblock(
+            molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV
+        );
+        const atomCoords = parseMolblockAtomCoords(tMolblock);
+        const screenCoords = coordsToScreenPos(atomCoords, SVG_SIZE, SVG_SIZE);
+
+        const svgEl = svgContainer.querySelector('svg');
+        if (!svgEl || screenCoords.length === 0) return;
+
+        const ns = 'http://www.w3.org/2000/svg';
+        for (let a = 0; a < screenCoords.length; a++) {
+            const circle = document.createElementNS(ns, 'circle');
+            circle.setAttribute('cx', screenCoords[a].x);
+            circle.setAttribute('cy', screenCoords[a].y);
+            circle.setAttribute('r', '15');
+            circle.setAttribute('fill', 'transparent');
+            circle.setAttribute('data-atom-idx', a);
+            circle.setAttribute('data-mol-idx', molIdx);
+            circle.style.cursor = editMode ? 'crosshair' : 'pointer';
+            circle.addEventListener('click', function(e) {
+                if (editMode) {
+                    e.stopPropagation();
+                    handleAtomClick(molIdx, a);
+                }
+            });
+            svgEl.appendChild(circle);
+        }
+    }
+
+    function refreshMolCard(idx) {
+        const grid = document.getElementById('grid');
+        const cards = grid.querySelectorAll('.mol-card');
+        if (idx >= 0 && idx < cards.length) {
+            const newCard = createMolCard(idx);
+            cards[idx].replaceWith(newCard);
+        }
+    }
+
+    // ===========================
+    // Interaction Handlers
+    // ===========================
+    function handleAtomClick(molIdx, atomIdx) {
+        const molData = molecules[molIdx];
+        if (molData.highlightAtoms.has(atomIdx)) {
+            molData.highlightAtoms.delete(atomIdx);
+        } else {
+            molData.highlightAtoms.add(atomIdx);
+        }
+        refreshMolCard(molIdx);
+
+        // Get atom symbol from SMILES-based info (approximate)
+        const highlighted = molData.highlightAtoms.has(atomIdx);
+        updateStatus('Atom ' + atomIdx + ' ' + (highlighted ? 'highlighted' : 'unhighlighted') +
+                     ' in ' + molData.catalogId);
+    }
+
+    function selectMolecule(idx) {
+        const prevIdx = selectedIdx;
+        selectedIdx = idx;
+
+        // Update previous card
+        if (prevIdx >= 0 && prevIdx < molecules.length) {
+            const prevCards = document.querySelectorAll('.mol-card');
+            if (prevCards[prevIdx]) prevCards[prevIdx].classList.remove('selected');
+        }
+
+        // Update new card
+        const cards = document.querySelectorAll('.mol-card');
+        if (cards[idx]) cards[idx].classList.add('selected');
+
+        updateStatus('Selected: ' + molecules[idx].catalogId);
+    }
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        const btn = document.getElementById('editModeBtn');
+        const infoBar = document.getElementById('infoBar');
+
+        if (editMode) {
+            btn.className = 'btn btn-active';
+            btn.textContent = 'Exit Edit Mode';
+            infoBar.className = 'info-bar edit';
+            infoBar.textContent = 'EDIT MODE: Click atoms to add/remove highlights. Click "Exit Edit Mode" when done.';
+        } else {
+            btn.className = 'btn btn-default';
+            btn.textContent = 'Edit Highlights';
+            infoBar.className = 'info-bar tip';
+            infoBar.textContent = 'Tip: Click molecules to select. Enable "Edit Highlights" to click atoms.';
+        }
+
+        // Update all card cursors
+        document.querySelectorAll('.mol-card').forEach(card => {
+            card.classList.toggle('edit-mode', editMode);
+        });
+        document.querySelectorAll('circle[data-atom-idx]').forEach(c => {
+            c.style.cursor = editMode ? 'crosshair' : 'pointer';
+        });
+    }
+
+    // ===========================
+    // Toolbar Actions
+    // ===========================
+    function rotateSelected(degrees) {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        mol.rotation = (mol.rotation + degrees + 360) % 360;
+        refreshMolCard(selectedIdx);
+        updateStatus('Rotated ' + mol.catalogId + ' to ' + mol.rotation + ' degrees');
+    }
+
+    function mirrorSelected(dir) {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        if (dir === 'h') mol.mirrorH = !mol.mirrorH;
+        else mol.mirrorV = !mol.mirrorV;
+        refreshMolCard(selectedIdx);
+        updateStatus('Mirrored ' + mol.catalogId + ' ' + (dir === 'h' ? 'horizontally' : 'vertically'));
+    }
+
+    function resetSelected() {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        mol.rotation = 0;
+        mol.mirrorH = false;
+        mol.mirrorV = false;
+        mol.highlightAtoms = new Set(mol.originalHighlightAtoms);
+        refreshMolCard(selectedIdx);
+        updateStatus('Reset ' + mol.catalogId);
+    }
+
+    function resetHighlights() {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        mol.highlightAtoms = new Set(mol.originalHighlightAtoms);
+        refreshMolCard(selectedIdx);
+        updateStatus('Reset highlights for ' + mol.catalogId);
+    }
+
+    function clearHighlights() {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        mol.highlightAtoms.clear();
+        refreshMolCard(selectedIdx);
+        updateStatus('Cleared highlights for ' + mol.catalogId);
+    }
+
+    // ===========================
+    // Atom Selector Dialog
+    // ===========================
+    function openAtomSelector() {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const molData = molecules[selectedIdx];
+        const list = document.getElementById('atomCheckboxList');
+        list.innerHTML = '';
+
+        const numAtoms = molData.mol.get_num_atoms();
+        // Get atom symbols from SMILES (approximate via molblock parsing)
+        const molblock = molData.alignedMolblock;
+        const atomSymbols = parseAtomSymbols(molblock);
+
+        for (let i = 0; i < numAtoms; i++) {
+            const lbl = document.createElement('label');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = i;
+            cb.checked = molData.highlightAtoms.has(i);
+            lbl.appendChild(cb);
+            const symbol = atomSymbols[i] || '?';
+            lbl.appendChild(document.createTextNode(' Atom ' + i + ': ' + symbol));
+            list.appendChild(lbl);
+        }
+
+        document.getElementById('atomModal').style.display = 'flex';
+    }
+
+    function parseAtomSymbols(molblock) {
+        const lines = molblock.split('\n');
+        let countsLineIdx = -1;
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
+                countsLineIdx = i;
+                break;
+            }
+        }
+        if (countsLineIdx < 0) return [];
+
+        const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+        const symbols = [];
+        const atomStartIdx = countsLineIdx + 1;
+        for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+            const line = lines[i];
+            // Atom symbol starts at column 31 in V2000 format
+            if (line.length > 33) {
+                symbols.push(line.substring(31, 34).trim());
+            } else {
+                symbols.push('?');
+            }
+        }
+        return symbols;
+    }
+
+    function closeAtomSelector() {
+        document.getElementById('atomModal').style.display = 'none';
+    }
+
+    function atomSelectAll() {
+        document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = true);
+    }
+
+    function atomSelectNone() {
+        document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = false);
+    }
+
+    function atomInvert() {
+        document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = !cb.checked);
+    }
+
+    function applyAtomSelection() {
+        if (selectedIdx < 0) return;
+        const molData = molecules[selectedIdx];
+        molData.highlightAtoms.clear();
+        document.querySelectorAll('#atomCheckboxList input:checked').forEach(cb => {
+            molData.highlightAtoms.add(parseInt(cb.value));
+        });
+        closeAtomSelector();
+        refreshMolCard(selectedIdx);
+        updateStatus('Updated highlights for ' + molData.catalogId);
+    }
+
+    // ===========================
+    // Label Updates
+    // ===========================
+    function updatePropertySelector(propertyNames) {
+        const select = document.getElementById('propSelect');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="__none__">Catalog ID only</option>';
+
+        for (const name of [...propertyNames].sort()) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        }
+
+        // Restore selection or default to Price
+        if ([...select.options].some(o => o.value === currentVal)) {
+            select.value = currentVal;
+        } else if ([...select.options].some(o => o.value === 'Price, USD')) {
+            select.value = 'Price, USD';
+        }
+    }
+
+    function updateLabels() {
+        if (molecules.length === 0) return;
+        renderGrid();
+        // Re-select if there was a selection
+        if (selectedIdx >= 0) {
+            const cards = document.querySelectorAll('.mol-card');
+            if (cards[selectedIdx]) cards[selectedIdx].classList.add('selected');
+        }
+    }
+
+    // ===========================
+    // Export
+    // ===========================
+    async function exportGrid() {
+        if (molecules.length === 0) return showAlert('No molecules to export.');
+
+        updateStatus('Exporting high-resolution image...');
+
+        const exportSize = 700; // 2x render size
+        const columns = parseInt(document.getElementById('columnsSelect').value);
+        const rows = Math.ceil(molecules.length / columns);
+        const fontSize = parseInt(document.getElementById('fontSizeSelect').value) * 2;
+        const padding = 20;
+        const textHeight = fontSize * 2 + 30; // Space for two lines of text
+
+        const cellW = exportSize;
+        const cellH = exportSize + textHeight;
+        const totalW = columns * cellW + (columns + 1) * padding;
+        const totalH = rows * cellH + (rows + 1) * padding;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = totalW;
+        canvas.height = totalH;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, totalW, totalH);
+
+        // Render each molecule
+        for (let i = 0; i < molecules.length; i++) {
+            const molData = molecules[i];
+            const col = i % columns;
+            const row = Math.floor(i / columns);
+            const x = padding + col * (cellW + padding);
+            const y = padding + row * (cellH + padding);
+
+            // Render SVG at export size
+            const svgStr = renderMoleculeSvg(molData, exportSize);
+
+            // Draw SVG to canvas
+            try {
+                await drawSvgToCanvas(ctx, svgStr, x, y, exportSize, exportSize);
+            } catch(e) {
+                console.warn('Failed to render molecule ' + i, e);
+            }
+
+            // Draw labels
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'center';
+            ctx.font = 'bold ' + fontSize + 'px -apple-system, Arial, sans-serif';
+            ctx.fillText(molData.catalogId, x + cellW / 2, y + exportSize + fontSize + 5);
+
+            // Second line
+            const propKey = document.getElementById('propSelect').value;
+            if (propKey !== '__none__' && molData.properties[propKey]) {
+                ctx.font = fontSize + 'px -apple-system, Arial, sans-serif';
+                const val = molData.properties[propKey];
+                const text = propKey === 'Price, USD' ? ('Price: $' + val) : (propKey + ': ' + val);
+                ctx.fillText(text, x + cellW / 2, y + exportSize + fontSize * 2 + 10);
+            }
+        }
+
+        // Download
+        canvas.toBlob(function(blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'molecular_grid.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            updateStatus('Exported high-resolution PNG (' + totalW + 'x' + totalH + ' px)');
+        }, 'image/png');
+    }
+
+    function drawSvgToCanvas(ctx, svgStr, x, y, w, h) {
+        return new Promise(function(resolve, reject) {
+            const img = new Image();
+            // Ensure SVG has proper dimensions
+            let svg = svgStr;
+            if (!svg.includes('xmlns=')) {
+                svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            img.onload = function() {
+                ctx.drawImage(img, x, y, w, h);
+                URL.revokeObjectURL(url);
+                resolve();
+            };
+            img.onerror = function(e) {
+                URL.revokeObjectURL(url);
+                reject(e);
+            };
+            img.src = url;
+        });
+    }
+
+    // ===========================
+    // Utilities
+    // ===========================
+    function cleanupMolecules() {
+        for (const molData of molecules) {
+            if (molData.mol) {
+                try { molData.mol.delete(); } catch(e) {}
+                molData.mol = null;
+            }
+        }
+        molecules = [];
+        selectedIdx = -1;
+    }
+
+    function updateStatus(msg) {
+        document.getElementById('statusBar').textContent = msg;
+    }
+
+    function showAlert(msg) {
+        alert(msg);
+    }
+    </script>
+</body>
+</html>
