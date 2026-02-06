@@ -497,15 +497,21 @@
     // Molecular Operations
     // ===========================
     function findMatchingAtoms(refMol, mol) {
-        // Strategy 1: Try MCS (most accurate)
+        // Strategy 1: Try MCS via MolList API (most accurate)
         if (typeof RDKit.get_mcs_as_smarts === 'function') {
+            let molList = null;
             try {
-                const mcsSmarts = RDKit.get_mcs_as_smarts(refMol, mol, JSON.stringify({
-                    timeout: 5,
-                    maximizeBonds: true,
-                    ringMatchesRingOnly: true,
-                    completeRingsOnly: true
+                molList = new RDKit.MolList();
+                molList.append(refMol);
+                molList.append(mol);
+                const mcsSmarts = RDKit.get_mcs_as_smarts(molList, JSON.stringify({
+                    Timeout: 5,
+                    MaximizeBonds: true,
+                    RingMatchesRingOnly: true,
+                    CompleteRingsOnly: true
                 }));
+                molList.delete();
+                molList = null;
                 if (mcsSmarts && mcsSmarts.length > 0) {
                     const qmol = RDKit.get_qmol(mcsSmarts);
                     if (qmol && qmol.is_valid()) {
@@ -522,6 +528,7 @@
                 }
             } catch(e) {
                 console.warn('MCS failed, trying substructure match', e);
+                if (molList) { try { molList.delete(); } catch(e2) {} }
             }
         }
 
