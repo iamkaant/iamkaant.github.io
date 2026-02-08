@@ -207,10 +207,10 @@
                 <div class="sep"></div>
                 <label>Highlight Radius:
                     <select id="highlightRadiusSelect" onchange="updateHighlightRadius()">
-                        <option value="0.2">Small</option>
-                        <option value="0.3">Medium</option>
-                        <option value="0.4" selected>Large</option>
-                        <option value="0.5">XL</option>
+                        <option value="0.4">Small</option>
+                        <option value="0.6">Medium</option>
+                        <option value="0.8" selected>Large</option>
+                        <option value="1.0">XL</option>
                     </select>
                 </label>
                 <label>Highlight Color:
@@ -265,7 +265,7 @@
     let editMode = false;     // Whether edit highlights mode is on
     const SVG_SIZE = 350;     // SVG render size in pixels
     let HIGHLIGHT_COLOR = [0.596, 0.984, 0.596]; // Light green
-    let highlightRadius = 0.4;
+    let highlightRadius = 0.8;
 
     // ===========================
     // Initialization
