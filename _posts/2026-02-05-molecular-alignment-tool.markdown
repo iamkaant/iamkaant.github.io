@@ -19,6 +19,7 @@ A browser-based tool for aligning molecular structures to a common reference sca
 - **Rotation & mirroring** -- adjust the orientation of any selected molecule while keeping atom labels upright.
 - **Atom selector dialog** -- bulk select/deselect atoms for highlighting via checkboxes.
 - **Configurable labels** -- choose font size and which molecular property to display as a second line (e.g., price, MW).
+- **Highlight appearance** -- adjust the highlight radius and pick a custom highlight color.
 - **High-resolution PNG export** -- export the entire grid at 2x resolution for publications or presentations.
 
 <iframe src="/assets/molecular-alignment.html"
