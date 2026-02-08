@@ -16,6 +16,7 @@ A browser-based tool for aligning molecular structures to a common reference sca
 ### Features
 
 - **Interactive highlighting** -- toggle Edit Highlights mode and click individual atoms to add or remove highlights.
+- **Structure editing** -- drag atoms to reposition them and fine-tune the 2D layout of any molecule. Atom click targets are pixel-accurate, derived directly from RDKit's rendered SVG coordinates.
 - **Rotation & mirroring** -- adjust the orientation of any selected molecule while keeping atom labels upright.
 - **Atom selector dialog** -- bulk select/deselect atoms for highlighting via checkboxes.
 - **Configurable labels** -- choose font size and which molecular property to display as a second line (e.g., price, MW).

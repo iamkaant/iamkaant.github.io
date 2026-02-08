@@ -72,6 +72,7 @@
         .mol-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
         .mol-card.selected { border-color: #1976D2; box-shadow: 0 0 0 2px rgba(25,118,210,0.3); }
         .mol-card.edit-mode { cursor: crosshair; }
+        .mol-card.struct-edit-mode { cursor: default; }
         .mol-svg-container { width: 100%; aspect-ratio: 1; display: flex; align-items: center;
             justify-content: center; background: #fff; }
         .mol-svg-container svg { width: 100%; height: 100%; }
@@ -157,6 +158,7 @@
         <div class="section">
             <div class="toolbar">
                 <button class="btn btn-default" id="editModeBtn" onclick="toggleEditMode()">Edit Highlights</button>
+                <button class="btn btn-default" id="structEditBtn" onclick="toggleStructEditMode()">Edit Structure</button>
                 <div class="sep"></div>
                 <button class="btn btn-default" onclick="openAtomSelector()">Atom List...</button>
                 <button class="btn btn-default" onclick="resetHighlights()">Reset Highlights</button>
@@ -170,6 +172,7 @@
                 <div class="sep"></div>
                 <button class="btn btn-export" onclick="exportGrid()">Export PNG</button>
                 <button class="btn btn-default" onclick="resetSelected()">Reset Selected</button>
+                <button class="btn btn-default" onclick="revertStructure()">Revert Structure</button>
             </div>
         </div>
 
@@ -266,6 +269,8 @@
     const SVG_SIZE = 350;     // SVG render size in pixels
     let HIGHLIGHT_COLOR = [0.596, 0.984, 0.596]; // Light green
     let highlightRadius = 0.8;
+    let structEditMode = false;  // Whether structure editing (atom drag) mode is on
+    let dragState = null;        // Active drag state
 
     // ===========================
     // Initialization
@@ -398,6 +403,7 @@
                 mol: mol,
                 smiles: raw.smiles || mol.get_smiles(),
                 alignedMolblock: alignedMolblock,
+                originalAlignedMolblock: alignedMolblock,
                 catalogId: raw.properties['Catalog ID'] || ('Mol_' + (i + 1)),
                 properties: raw.properties,
                 matchAtoms: matchAtoms,
@@ -798,6 +804,94 @@
         }));
     }
 
+    function getAtomScreenPositions(molData, size) {
+        const tMolblock = transformMolblock(
+            molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV
+        );
+        const tempMol = RDKit.get_mol(tMolblock);
+        if (!tempMol || !tempMol.is_valid()) {
+            if (tempMol) tempMol.delete();
+            return [];
+        }
+        const numAtoms = tempMol.get_num_atoms();
+        const allAtoms = [];
+        for (let i = 0; i < numAtoms; i++) allAtoms.push(i);
+
+        const baseFontSize = parseFloat(document.getElementById('atomFontSelect').value);
+        const bondLineWidth = parseFloat(document.getElementById('bondWidthSelect').value);
+        const details = JSON.stringify({
+            atoms: allAtoms,
+            bonds: [],
+            width: size,
+            height: size,
+            highlightColour: [1, 1, 1],
+            highlightRadius: 0.001,
+            bondLineWidth: bondLineWidth,
+            baseFontSize: baseFontSize
+        });
+
+        let svg;
+        try {
+            svg = tempMol.get_svg_with_highlights(details);
+        } catch(e) {
+            tempMol.delete();
+            return [];
+        }
+        tempMol.delete();
+
+        // Parse atom positions from highlight ellipses in the SVG
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+        const ellipses = svgDoc.querySelectorAll('ellipse');
+        const positions = new Array(numAtoms).fill(null);
+        for (const ellipse of ellipses) {
+            const cls = ellipse.getAttribute('class') || '';
+            const match = cls.match(/atom-(\d+)/);
+            if (match) {
+                const idx = parseInt(match[1]);
+                if (idx < numAtoms) {
+                    positions[idx] = {
+                        x: parseFloat(ellipse.getAttribute('cx')),
+                        y: parseFloat(ellipse.getAttribute('cy'))
+                    };
+                }
+            }
+        }
+        return positions;
+    }
+
+    function deriveTransform(molCoords, screenCoords) {
+        // Find two atoms with maximal mol-space separation
+        let bestDist = 0, bestI = -1, bestJ = -1;
+        for (let i = 0; i < molCoords.length; i++) {
+            if (!screenCoords[i]) continue;
+            for (let j = i + 1; j < molCoords.length; j++) {
+                if (!screenCoords[j]) continue;
+                const dx = molCoords[i].x - molCoords[j].x;
+                const dy = molCoords[i].y - molCoords[j].y;
+                const dist = dx * dx + dy * dy;
+                if (dist > bestDist) { bestDist = dist; bestI = i; bestJ = j; }
+            }
+        }
+        if (bestI < 0 || bestDist < 0.0001) {
+            return { scale: 1, tx: SVG_SIZE / 2, ty: SVG_SIZE / 2 };
+        }
+        // Transform: screenX = molX * S + Tx, screenY = -molY * S + Ty
+        const dMolX = molCoords[bestI].x - molCoords[bestJ].x;
+        const dScreenX = screenCoords[bestI].x - screenCoords[bestJ].x;
+        const dMolY = molCoords[bestI].y - molCoords[bestJ].y;
+        const dScreenY = screenCoords[bestI].y - screenCoords[bestJ].y;
+        let scale;
+        if (Math.abs(dMolX) > 0.001) {
+            scale = dScreenX / dMolX;
+        } else {
+            scale = -dScreenY / dMolY;
+        }
+        const tx = screenCoords[bestI].x - molCoords[bestI].x * scale;
+        const ty = screenCoords[bestI].y + molCoords[bestI].y * scale;
+        return { scale, tx, ty };
+    }
+
     // ===========================
     // Rendering
     // ===========================
@@ -822,7 +916,8 @@
         const molData = molecules[idx];
         const card = document.createElement('div');
         card.className = 'mol-card' + (idx === selectedIdx ? ' selected' : '') +
-                         (editMode ? ' edit-mode' : '');
+                         (editMode ? ' edit-mode' : '') +
+                         (structEditMode ? ' struct-edit-mode' : '');
         card.setAttribute('data-mol-idx', idx);
 
         // SVG container
@@ -863,7 +958,7 @@
         card.addEventListener('click', function(e) {
             // Don't select if clicking an atom target in edit mode
             if (e.target.closest('circle[data-atom-idx]')) return;
-            if (!editMode) selectMolecule(idx);
+            if (!editMode && !structEditMode) selectMolecule(idx);
         });
 
         return card;
@@ -907,17 +1002,14 @@
     }
 
     function addAtomClickTargets(svgContainer, molData, molIdx) {
-        const tMolblock = transformMolblock(
-            molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV
-        );
-        const atomCoords = parseMolblockAtomCoords(tMolblock);
-        const screenCoords = coordsToScreenPos(atomCoords, SVG_SIZE, SVG_SIZE);
+        const screenCoords = getAtomScreenPositions(molData, SVG_SIZE);
 
         const svgEl = svgContainer.querySelector('svg');
         if (!svgEl || screenCoords.length === 0) return;
 
         const ns = 'http://www.w3.org/2000/svg';
         for (let a = 0; a < screenCoords.length; a++) {
+            if (!screenCoords[a]) continue;
             const circle = document.createElementNS(ns, 'circle');
             circle.setAttribute('cx', screenCoords[a].x);
             circle.setAttribute('cy', screenCoords[a].y);
@@ -925,11 +1017,30 @@
             circle.setAttribute('fill', 'transparent');
             circle.setAttribute('data-atom-idx', a);
             circle.setAttribute('data-mol-idx', molIdx);
-            circle.style.cursor = editMode ? 'crosshair' : 'pointer';
+            circle.style.cursor = structEditMode ? 'grab' : (editMode ? 'crosshair' : 'pointer');
             circle.addEventListener('click', function(e) {
                 if (editMode) {
                     e.stopPropagation();
                     handleAtomClick(molIdx, a);
+                }
+            });
+            circle.addEventListener('pointerdown', function(e) {
+                if (structEditMode) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    startAtomDrag(e, molIdx, a, svgContainer);
+                }
+            });
+            circle.addEventListener('mouseenter', function() {
+                if (structEditMode && !dragState) {
+                    circle.setAttribute('fill', 'rgba(25, 118, 210, 0.25)');
+                    circle.setAttribute('r', '18');
+                }
+            });
+            circle.addEventListener('mouseleave', function() {
+                if (structEditMode && !dragState) {
+                    circle.setAttribute('fill', 'transparent');
+                    circle.setAttribute('r', '15');
                 }
             });
             svgEl.appendChild(circle);
@@ -1002,6 +1113,13 @@
         const btn = document.getElementById('editModeBtn');
         const infoBar = document.getElementById('infoBar');
 
+        // Disable struct edit mode if turning on highlight edit
+        if (editMode && structEditMode) {
+            structEditMode = false;
+            document.getElementById('structEditBtn').className = 'btn btn-default';
+            document.getElementById('structEditBtn').textContent = 'Edit Structure';
+        }
+
         if (editMode) {
             btn.className = 'btn btn-active';
             btn.textContent = 'Exit Edit Mode';
@@ -1017,10 +1135,130 @@
         // Update all card cursors
         document.querySelectorAll('.mol-card').forEach(card => {
             card.classList.toggle('edit-mode', editMode);
+            card.classList.remove('struct-edit-mode');
         });
         document.querySelectorAll('circle[data-atom-idx]').forEach(c => {
             c.style.cursor = editMode ? 'crosshair' : 'pointer';
         });
+    }
+
+    function toggleStructEditMode() {
+        structEditMode = !structEditMode;
+        const btn = document.getElementById('structEditBtn');
+        const infoBar = document.getElementById('infoBar');
+
+        // Disable highlight edit mode if turning on struct edit
+        if (structEditMode && editMode) {
+            editMode = false;
+            document.getElementById('editModeBtn').className = 'btn btn-default';
+            document.getElementById('editModeBtn').textContent = 'Edit Highlights';
+        }
+
+        if (structEditMode) {
+            btn.className = 'btn btn-active';
+            btn.textContent = 'Exit Structure Edit';
+            infoBar.className = 'info-bar edit';
+            infoBar.textContent = 'STRUCTURE EDIT: Drag atoms to reposition them. Click "Exit Structure Edit" when done.';
+        } else {
+            btn.className = 'btn btn-default';
+            btn.textContent = 'Edit Structure';
+            infoBar.className = 'info-bar tip';
+            infoBar.textContent = 'Tip: Click molecules to select. Enable "Edit Highlights" to click atoms.';
+        }
+
+        renderGrid();
+    }
+
+    // ===========================
+    // Structure Editing (Atom Drag)
+    // ===========================
+    function screenToMolCoords(sx, sy, transform) {
+        const { scale, tx, ty } = transform;
+        return {
+            x: (sx - tx) / scale,
+            y: -(sy - ty) / scale
+        };
+    }
+
+    function updateMolblockAtomCoord(molblock, atomIdx, newX, newY) {
+        const lines = molblock.split('\n');
+        let countsLineIdx = -1;
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            if (lines[i].includes('V2000') || lines[i].includes('V3000')) {
+                countsLineIdx = i; break;
+            }
+        }
+        if (countsLineIdx < 0) return molblock;
+        const lineIdx = countsLineIdx + 1 + atomIdx;
+        if (lineIdx >= lines.length) return molblock;
+        const line = lines[lineIdx];
+        const rest = line.substring(20);
+        lines[lineIdx] = newX.toFixed(4).padStart(10) + newY.toFixed(4).padStart(10) + rest;
+        return lines.join('\n');
+    }
+
+    function startAtomDrag(e, molIdx, atomIdx, svgContainer) {
+        const molData = molecules[molIdx];
+        const tMolblock = transformMolblock(
+            molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV
+        );
+        const atomCoords = parseMolblockAtomCoords(tMolblock);
+        const screenCoords = getAtomScreenPositions(molData, SVG_SIZE);
+        const svgEl = svgContainer.querySelector('svg');
+        const rect = svgEl.getBoundingClientRect();
+        const transform = deriveTransform(atomCoords, screenCoords);
+
+        const circle = e.target;
+        circle.setAttribute('fill', 'rgba(25, 118, 210, 0.4)');
+        circle.setAttribute('r', '18');
+        circle.style.cursor = 'grabbing';
+        circle.setPointerCapture(e.pointerId);
+
+        dragState = {
+            molIdx, atomIdx, circle, svgEl, rect,
+            tMolblock, atomCoords, transform, molData
+        };
+
+        function onMove(ev) {
+            if (!dragState) return;
+            const svgX = (ev.clientX - dragState.rect.left) / dragState.rect.width * SVG_SIZE;
+            const svgY = (ev.clientY - dragState.rect.top) / dragState.rect.height * SVG_SIZE;
+            dragState.circle.setAttribute('cx', svgX);
+            dragState.circle.setAttribute('cy', svgY);
+        }
+
+        function onUp(ev) {
+            if (!dragState) return;
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+
+            const svgX = (ev.clientX - dragState.rect.left) / dragState.rect.width * SVG_SIZE;
+            const svgY = (ev.clientY - dragState.rect.top) / dragState.rect.height * SVG_SIZE;
+            const newCoords = screenToMolCoords(svgX, svgY, dragState.transform);
+
+            // Update the transformed molblock with the new atom position
+            const newMolblock = updateMolblockAtomCoord(
+                dragState.tMolblock, dragState.atomIdx, newCoords.x, newCoords.y
+            );
+
+            // Bake current transforms into the molblock and reset them
+            dragState.molData.alignedMolblock = newMolblock;
+            dragState.molData.rotation = 0;
+            dragState.molData.mirrorH = false;
+            dragState.molData.mirrorV = false;
+
+            // Recreate the RDKit mol object with updated coordinates
+            try { dragState.molData.mol.delete(); } catch(ex) {}
+            dragState.molData.mol = RDKit.get_mol(newMolblock);
+
+            const idx = dragState.molIdx;
+            dragState = null;
+            refreshMolCard(idx);
+            updateStatus('Moved atom ' + atomIdx + ' in ' + molData.catalogId);
+        }
+
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
     }
 
     // ===========================
@@ -1052,6 +1290,20 @@
         mol.highlightAtoms = new Set(mol.originalHighlightAtoms);
         refreshMolCard(selectedIdx);
         updateStatus('Reset ' + mol.catalogId);
+    }
+
+    function revertStructure() {
+        if (selectedIdx < 0) return showAlert('Select a molecule first.');
+        const mol = molecules[selectedIdx];
+        mol.alignedMolblock = mol.originalAlignedMolblock;
+        mol.rotation = 0;
+        mol.mirrorH = false;
+        mol.mirrorV = false;
+        // Recreate the RDKit mol object from the original molblock
+        try { mol.mol.delete(); } catch(ex) {}
+        mol.mol = RDKit.get_mol(mol.originalAlignedMolblock);
+        refreshMolCard(selectedIdx);
+        updateStatus('Reverted structure for ' + mol.catalogId);
     }
 
     function resetHighlights() {
