@@ -8,11 +8,11 @@ permalink: /about/
 
 Postdoctoral researcher with 10+ years of experience in computer-accelerated drug discovery, computational chemistry and nanomaterial modeling. Passionate about designing novel chemical probes to unravel new mechanisms in biology. I am interested in leveraging the progress in combinatorial chemistry, molecular biology, and high-performance computing/AI to accelerate drug discovery.
 
-[Google Scholar](https://scholar.google.com/citations?hl=ru&user=idvgf-sAAAAJ)
-[ORCID](https://orcid.org/0000-0002-8845-5194)
-[WebOfScience](https://www.webofscience.com/wos/author/record/F-8759-2016)
-[Scopus](https://www.scopus.com/authid/detail.uri?authorId=55520199100)
-[ResearchGate](https://www.researchgate.net/profile/Andrii-Kyrylchuk)
+[Google Scholar](https://scholar.google.com/citations?hl=ru&user=idvgf-sAAAAJ) |
+[ORCID](https://orcid.org/0000-0002-8845-5194) |
+[WebOfScience](https://www.webofscience.com/wos/author/record/F-8759-2016) |
+[Scopus](https://www.scopus.com/authid/detail.uri?authorId=55520199100) |
+[ResearchGate](https://www.researchgate.net/profile/Andrii-Kyrylchuk) |
 [UCSF Profiles](https://profiles.ucsf.edu/andrii.kyrylchuk)
 
 ---
