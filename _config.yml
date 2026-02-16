@@ -29,7 +29,7 @@ url: "https://kyrylch.uk" # the base hostname & protocol for your site, e.g. htt
 github_username:  iamkaant
 
 # Build settings
-theme: cayman #minima
+theme: jekyll-theme-cayman #minima
 plugins:
   - jekyll-feed
 
