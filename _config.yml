@@ -29,8 +29,8 @@ url: "https://kyrylch.uk" # the base hostname & protocol for your site, e.g. htt
 github_username:  iamkaant
 
 # Build settings
-theme: minima
-remote_theme: benbalter/retlab
+# theme: minima
+remote_theme: pages-themes/cayman@v0.2.0 #benbalter/retlab
 plugins:
   - jekyll-feed
   - jekyll-remote-theme
