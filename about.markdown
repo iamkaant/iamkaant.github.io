@@ -6,6 +6,14 @@ permalink: /about/
 
 # Andrii Kyrylchuk
 
+Postdoctoral researcher with 10+ years of experience in computer-accelerated drug discovery, computational chemistry and nanomaterial modeling. Passionate about designing novel chemical probes to unravel new mechanisms in biology. I am interested in leveraging the progress in combinatorial chemistry, molecular biology, and high-performance computing/AI to accelerate drug discovery.
+
+[Google Scholar](https://scholar.google.com/citations?hl=ru&user=idvgf-sAAAAJ)
+[ORCID](https://orcid.org/0000-0002-8845-5194)
+[WebOfScience](https://www.webofscience.com/wos/author/record/F-8759-2016)
+[Scopus](https://www.scopus.com/authid/detail.uri?authorId=55520199100)
+[ResearchGate](https://www.researchgate.net/profile/Andrii-Kyrylchuk)
+[UCSF Profiles](https://profiles.ucsf.edu/andrii.kyrylchuk)
 
 ---
 
@@ -16,48 +24,33 @@ Ph.D. Organoelement Chemistry
 Thesis title: *Phosphorylated 1,2,4-triazoles*  
 Defense Date: June 2015  
 
-**National Technical University of Ukraine "Kyiv Polytechnic Institute", Kyiv, Ukraine**
-
-Master of Science, Organic Chemistry and Chemical Technology of Organic Substances
-
-Graduation Date: June 2010
-
-GPA: 5.0. Finished with *Cum Laude* diploma
+**National Technical University of Ukraine "Kyiv Polytechnic Institute", Kyiv, Ukraine**  
+Master of Science, Organic Chemistry and Chemical Technology of Organic Substances  
+Graduation Date: June 2010  
+GPA: 5.0. Finished with *Cum Laude* diploma  
 
 ---
 
 ## Research Experience
 
-**Postdoctoral Researcher** — March 2022 -- present
+**Postdoctoral Researcher** — March 2022 -- present  
+**University of California San Francisco**, USA  
+Advisor: Brian Shoichet  
+Performing computing-aided drug discovery projects.
 
-**University of California San Francisco**, USA
-
-Advisor: Brian Shoichet
-
-Discovered novel inhibitors of SARS-CoV-2 Nsp14 and RdRp and human GPR68 through ultra-large virtual screening and optimization
-
-**Research Consultant** — August 2020 -- March 2022
-
-**Enamine Ltd**, Kyiv, Ukraine
-
-Supervisor: Yurii Moroz
-
+**Research Consultant** — August 2020 -- March 2022  
+**Enamine Ltd**, Kyiv, Ukraine  
+Supervisor: Yurii Moroz  
 Performing molecular docking and quantum-chemical investigations of organic compounds.
 
-**Researcher (Fulbright Scholarship)** — August 2018 -- May 2019
+**Researcher (Fulbright Scholarship)** — August 2018 -- May 2019  
+Physics and Astronomy Department, **Michigan State University**, USA  
+Advisor: David Tomanek  
+Quantum-chemical calculations of 2D materials.  
 
-Physics and Astronomy Department, **Michigan State University**, USA
-
-Advisor: David Tomanek
-
-Quantum-chemical calculations of 2D materials.
-
-**Researcher** — November 2013 -- March 2022
-
-**Institute of Organic Chemistry**, NAS of Ukraine
-
-Advisor: Alexander B. Rozhenko
-
+**Researcher** — November 2013 -- March 2022  
+**Institute of Organic Chemistry**, NAS of Ukraine  
+Advisor: Alexander B. Rozhenko  
 - Quantum-chemical investigation of mechanisms of formation and reactions of various organic compounds.
 - Molecular docking simulations of prospective drug candidates.
 - Quantum-chemical calculations of 2D carbon nanomaterials.
