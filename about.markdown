@@ -11,14 +11,10 @@ permalink: /about/
 
 ## Education
 
-**Institute of Organic Chemistry, NAS of Ukraine, Kyiv**
-
-Ph.D. Organoelement Chemistry
-
-Thesis title: *Phosphorylated 1,2,4-triazoles*
-
-Defense Date: June 2015
-
+**Institute of Organic Chemistry, NAS of Ukraine, Kyiv**  
+Ph.D. Organoelement Chemistry  
+Thesis title: *Phosphorylated 1,2,4-triazoles*  
+Defense Date: June 2015  
 
 **National Technical University of Ukraine "Kyiv Polytechnic Institute", Kyiv, Ukraine**
 
