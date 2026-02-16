@@ -12,13 +12,20 @@ permalink: /about/
 ## Education
 
 **Institute of Organic Chemistry, NAS of Ukraine, Kyiv**
+
 Ph.D. Organoelement Chemistry
+
 Thesis title: *Phosphorylated 1,2,4-triazoles*
+
 Defense Date: June 2015
 
+
 **National Technical University of Ukraine "Kyiv Polytechnic Institute", Kyiv, Ukraine**
+
 Master of Science, Organic Chemistry and Chemical Technology of Organic Substances
+
 Graduation Date: June 2010
+
 GPA: 5.0. Finished with *Cum Laude* diploma
 
 ---
@@ -26,23 +33,35 @@ GPA: 5.0. Finished with *Cum Laude* diploma
 ## Research Experience
 
 **Postdoctoral Researcher** — March 2022 -- present
+
 **University of California San Francisco**, USA
+
 Advisor: Brian Shoichet
+
 Discovered novel inhibitors of SARS-CoV-2 Nsp14 and RdRp and human GPR68 through ultra-large virtual screening and optimization
 
 **Research Consultant** — August 2020 -- March 2022
+
 **Enamine Ltd**, Kyiv, Ukraine
+
 Supervisor: Yurii Moroz
+
 Performing molecular docking and quantum-chemical investigations of organic compounds.
 
 **Researcher (Fulbright Scholarship)** — August 2018 -- May 2019
+
 Physics and Astronomy Department, **Michigan State University**, USA
+
 Advisor: David Tomanek
+
 Quantum-chemical calculations of 2D materials.
 
 **Researcher** — November 2013 -- March 2022
+
 **Institute of Organic Chemistry**, NAS of Ukraine
+
 Advisor: Alexander B. Rozhenko
+
 - Quantum-chemical investigation of mechanisms of formation and reactions of various organic compounds.
 - Molecular docking simulations of prospective drug candidates.
 - Quantum-chemical calculations of 2D carbon nanomaterials.
