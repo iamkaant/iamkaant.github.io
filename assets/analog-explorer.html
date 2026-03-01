@@ -1,0 +1,3593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analog Explorer (MCS Regions)</title>
+  <style>
+    :root{
+      --bg:#f6f7f9;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --primary:#1565C0;
+      --accent:#4CAF50;
+      --danger:#c62828;
+      --border:#e5e7eb;
+      --shadow: 0 2px 10px rgba(0,0,0,0.08);
+      --idFontPx: 12px;
+    }
+
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+      color:var(--text);
+      background:var(--bg);
+    }
+
+    /* Loading */
+    #loading{
+      position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:#fff; z-index:9999;
+    }
+    .spinner{
+      width:52px; height:52px; border-radius:50%;
+      border:4px solid #e5e7eb; border-top-color:var(--primary);
+      animation:spin 0.8s linear infinite;
+      margin-bottom:16px;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+    #loading .title{font-size:18px; font-weight:700; margin-bottom:6px;}
+    #loading .sub{font-size:13px; color:var(--muted);}
+
+    /* App shell */
+    #app{display:none; min-height:100%;}
+
+    .topbar{
+      position:sticky; top:0; z-index:200;
+      background: linear-gradient(90deg, #0f5fb3, #1976D2);
+      color:#fff;
+      padding:12px 16px;
+      display:flex; align-items:center; gap:10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    }
+    .topbar .title{font-weight:800; font-size:16px; letter-spacing:0.2px;}
+    .topbar .version{font-size:12px; opacity:0.85; font-weight:500;}
+    .topbar .spacer{flex:1;}
+    .btn{
+      border:none; border-radius:8px;
+      padding:8px 12px;
+      font-size:13px;
+      cursor:pointer;
+      background:#e5e7eb;
+      color:#111827;
+      font-weight:650;
+      transition: transform 0.05s ease, background 0.15s ease;
+      white-space:nowrap;
+    }
+    .btn:active{transform:translateY(1px);}
+    .btn.primary{background:var(--accent); color:#fff;}
+    .btn.primary:disabled{opacity:0.55; cursor:not-allowed;}
+    .btn.outline{
+      background: transparent;
+      border:1px solid rgba(255,255,255,0.55);
+      color:#fff;
+    }
+    .btn.danger{background:var(--danger); color:#fff;}
+    .btn.small{padding:6px 10px; font-size:12px; border-radius:7px;}
+    .btn.toggleBtn{background:#e5e7eb;}
+    .btn.toggleBtn.active{background:var(--primary); color:#fff;}
+
+    .container{padding:12px 12px 90px 12px; max-width:1300px; margin:0 auto;}
+
+    .panel{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      padding:12px;
+      margin-bottom:10px;
+    }
+    .panel h3{
+      margin:0 0 8px 0;
+      font-size:12px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    label{font-size:12px; color:var(--muted); font-weight:650;}
+    input[type="text"], textarea, select, input[type="number"]{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:13px;
+      outline:none;
+      background:#fff;
+      color:var(--text);
+    }
+    input[type="text"]{min-width:240px;}
+    input[type="number"]{width:90px;}
+    textarea{
+      width:100%;
+      min-height:92px;
+      resize:vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      font-size:12px;
+      color:#111827;
+    }
+
+    .help{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+      line-height:1.35;
+    }
+    .help code{background:#f3f4f6; padding:2px 6px; border-radius:6px;}
+
+    /* Main SAR view */
+    .sar{
+      position:relative;
+      margin-top:6px;
+    }
+
+    .parentWrap{
+      position:relative;
+      display:flex;
+      justify-content:center;
+      z-index:5;
+      margin-bottom:-14px; /* let trays tuck behind parent a bit */
+      pointer-events:auto;
+    }
+    .parentCard{
+      width:min(560px, 100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+      padding:10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .parentHeader{
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .parentHeader .meta{flex:1; min-width:0;}
+    .parentHeader .meta .id{font-weight:850; font-size:14px; margin-bottom:2px;}
+    .parentHeader .meta .smiles{
+      font-size:12px; color:var(--muted);
+      word-break:break-all;
+    }
+    .parentHeader .pill{
+      font-size:12px;
+      background:#eef2ff;
+      color:#3730a3;
+      border:1px solid #e0e7ff;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:750;
+      white-space:nowrap;
+    }
+
+    .parentSvg{
+      margin-top:8px;
+      width:100%;
+      aspect-ratio: 16 / 9;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .parentSvg svg{width:100%; height:100%;}
+    .parentSvg.editing{outline: 3px dashed rgba(21,101,192,0.25); outline-offset: -6px;}
+
+    .splitLine{
+      position:absolute;
+      top:0; bottom:0;
+      width:0;
+      border-left:2px dashed rgba(17,24,39,0.18);
+      pointer-events:none;
+    }
+
+    .trays{
+      background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.00));
+      border:1px solid rgba(229,231,235,0.6);
+      border-radius:16px;
+      padding:18px 10px 10px 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      z-index:1;
+    }
+
+    .tray{
+      margin-top:10px;
+      background: rgba(255,255,255,0.75);
+      border:1px solid rgba(229,231,235,0.85);
+      border-radius:14px;
+      padding:10px;
+    }
+
+    .trayHeader{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .trayHeader .name{font-weight:850; font-size:13px; display:flex; align-items:center; gap:8px;}
+    .trayHeader .count{font-size:12px; color:var(--muted);}
+    .trayHeader .hint{margin-left:auto; font-size:12px; color:var(--muted); max-width:480px; text-align:right;}
+
+    .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      border:1px solid rgba(17,24,39,0.10);
+      flex:0 0 auto;
+    }
+
+    .thumbRow{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding-bottom:6px;
+      scroll-snap-type: x mandatory;
+      min-height: 180px;
+      align-items: stretch;
+    }
+
+    .thumbCard{
+      flex: 0 0 auto;
+      width: 170px;
+      border-radius:12px;
+      border:2px solid rgba(229,231,235,0.95);
+      background:#fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      overflow:hidden;
+      cursor:pointer;
+      scroll-snap-align: start;
+      position:relative;
+      user-select:none;
+    }
+    .thumbCard:hover{box-shadow: 0 4px 16px rgba(0,0,0,0.10);}
+    .thumbCard.selected{border-color: rgba(21,101,192,0.95); box-shadow: 0 0 0 3px rgba(21,101,192,0.18);}
+    .thumbSvg{
+      width:100%;
+      aspect-ratio:1 / 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+      border-bottom:1px solid var(--border);
+    }
+    .thumbSvg svg{width:100%; height:100%;}
+    .thumbFooter{
+      padding:8px;
+      background:#fafafa;
+    }
+    .thumbFooter .id{
+      font-weight:800;
+      font-size: var(--idFontPx);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .thumbFooter .meta{display:flex; gap:8px; align-items:center; margin-top:4px;}
+.thumbFooter .extra{
+      margin-top:4px;
+      font-size:11px;
+      color: var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .thumbFooter .extraWrap{
+      margin-top:4px;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .thumbFooter .extraRow{
+      font-size:11px;
+      color: var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      line-height:1.15;
+    }
+    .thumbFooter .extraRow.missing{
+      color:#cbd5e1;
+      font-style:italic;
+    }
+
+    .mini{
+      font-size:11px;
+      color: var(--muted);
+      max-width: 240px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge{
+      font-size:11px;
+      padding:3px 7px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      color:#111827;
+      font-weight:750;
+    }
+    .badge.sim{background:#ecfeff; border-color:#cffafe; color:#155e75;}
+    .badge.mcs{background:#fef3c7; border-color:#fde68a; color:#92400e;}
+
+    .dragHint{
+      position:absolute;
+      top:8px;
+      right:8px;
+      font-size:11px;
+      padding:3px 6px;
+      border-radius:8px;
+      background: rgba(17,24,39,0.06);
+      color:#374151;
+      border:1px solid rgba(17,24,39,0.08);
+      opacity:0;
+      transition: opacity 0.15s ease;
+    }
+    .thumbCard:hover .dragHint{opacity:1;}
+
+    .thumbCard[draggable="true"]{cursor:grab;}
+    .thumbCard.dragging{opacity:0.55; cursor:grabbing;}
+    .thumbRow.dropTarget{outline: 3px dashed rgba(21,101,192,0.25); outline-offset:6px; border-radius:12px;}
+
+    .emptyDrop{
+      flex: 0 0 auto;
+      min-width: 220px;
+      border-radius:12px;
+      border:2px dashed rgba(107,114,128,0.35);
+      background: rgba(255,255,255,0.70);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align:center;
+    }
+
+    /* Regions chips */
+    .regionBar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px;}
+    .regionChip{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      cursor:pointer;
+      font-weight:850;
+      font-size:12px;
+      user-select:none;
+    }
+    .regionChip .count{color:var(--muted); font-weight:750;}
+    .regionChip.active{border-color: rgba(21,101,192,0.95); box-shadow: 0 0 0 3px rgba(21,101,192,0.12);}
+    .regionChip.disabled{opacity:0.55; cursor:not-allowed;}
+
+    /* Editor drawer */
+    .drawer{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      z-index:300;
+      background:#ffffff;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -8px 20px rgba(0,0,0,0.10);
+      transform: translateY(100%);
+      transition: transform 0.22s ease;
+    }
+    .drawer.open{transform: translateY(0%);}
+
+    .drawerInner{max-width:1300px; margin:0 auto; padding:10px 12px 14px 12px;}
+
+    .drawerHeader{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .drawerHeader .title{
+      font-weight:900;
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .drawerHeader .subtitle{
+      font-size:12px;
+      color:var(--muted);
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      flex:1;
+    }
+
+    .drawerMain{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap:10px;
+      align-items:stretch;
+    }
+
+    .editorSvg{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:12px;
+      overflow:hidden;
+      min-height:260px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
+    .editorSvg svg{width:100%; height:100%;}
+
+    .editorControls{
+      background:#fafafa;
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+    }
+    .controlsRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+    .controlsRow + .controlsRow{margin-top:8px;}
+
+    .smallNote{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.35;}
+
+    /* Status */
+    #status{
+      position:fixed;
+      left:0; right:0;
+      bottom:0;
+      z-index:210;
+      background: rgba(17,24,39,0.92);
+      color:#cbd5e1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      font-size:12px;
+      padding:6px 12px;
+    }
+
+    .progressWrap{display:flex; align-items:center; gap:10px; margin-top:8px;}
+    .progress{
+      flex:1;
+      height:10px;
+      border-radius:999px;
+      background:#e5e7eb;
+      overflow:hidden;
+      border:1px solid #e5e7eb;
+    }
+    .progress > div{height:100%; width:0%; background: linear-gradient(90deg, #4CAF50, #1976D2);}
+
+    /* Responsive */
+    @media (max-width: 920px) {
+      .drawerMain{grid-template-columns: 1fr;}
+      .drawer{max-height: 78vh; overflow:auto;}
+      input[type="text"]{min-width: 180px;}
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div class="title">Loading RDKit…</div>
+    <div class="sub">If this hangs, your network may be blocking CDN access.</div>
+  </div>
+
+  <div id="app">
+    <div class="topbar">
+      <div class="title">Analog Explorer</div>
+      <div class="version" id="rdkitVersion"></div>
+      <div class="spacer"></div>
+      <button class="btn outline small" id="toggleDrawerBtn" title="Open/close editor">Editor</button>
+      <button class="btn outline small" id="fullscreenBtn" title="Toggle fullscreen">⛶ Fullscreen</button>
+    </div>
+
+    <div class="container">
+      <div class="panel">
+        <h3>Input</h3>
+        <div class="row">
+          <label>File</label>
+          <input type="file" id="fileInput" accept=".sdf,.smi,.smiles,.txt,.csv,.tsv" />
+
+          <label>Parent</label>
+          <select id="parentMode">
+            <option value="first" selected>First molecule in input</option>
+            <option value="ref">Reference SMILES (parent)</option>
+          </select>
+
+          <input type="text" id="parentSmiles" placeholder="Parent SMILES (only if using Reference)" style="flex:1; min-width:280px;" />
+
+          <button class="btn primary" id="buildBtn" disabled>Build grouped view</button>
+          <button class="btn" id="clearBtn">Clear</button>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label>Or paste SMILES / ID list</label>
+          <textarea id="pasteBox" placeholder="Example:
+CCOc1ccc(NC(=O)N2CCN(CC2)C)cc1	Cmpd_01
+CCOc1ccc(NC(=O)N2CCN(CC2)CC)cc1	Cmpd_02"></textarea>
+          <div class="help">
+            Accepts <code>SMILES ID</code> or <code>ID SMILES</code> (whitespace or tab). If a file is provided, it is used.
+          </div>
+
+          <div class="progressWrap">
+            <div class="progress"><div id="progressBar"></div></div>
+            <div style="font-size:12px; color:var(--muted); width:140px; text-align:right;" id="progressText">Idle</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>View</h3>
+
+        <div class="row">
+          <label>Min ECFP4 similarity to parent</label>
+          <input type="range" id="simMin" min="0" max="1" step="0.01" value="0" style="width:220px;" />
+          <span class="badge sim" id="simMinLabel">0.00</span>
+
+          <label>Thumb size</label>
+          <input type="range" id="thumbSize" min="130" max="240" step="10" value="170" style="width:180px;" />
+          <span class="badge" id="thumbSizeLabel">170</span>
+
+          <label>Grouping</label>
+          <select id="groupingMode">
+            <option value="regions" selected>Custom regions (manual)</option>
+            <option value="lr3">Left / Middle / Right (auto)</option>
+          </select>
+
+          <button class="btn" id="swapLRBtn" title="If depiction flips the ligand, swap labels">Swap Left/Right</button>
+          <button class="btn" id="rebuildGroupsBtn" title="Reapply grouping + filters" disabled>Reapply filters</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <label>Atom labels</label>
+          <select id="atomFontSelect">
+            <option value="0.45">Small</option>
+            <option value="0.60" selected>Medium</option>
+            <option value="0.80">Large</option>
+            <option value="1.00">XL</option>
+          </select>
+
+          <label>Bond width</label>
+          <select id="bondWidthSelect">
+            <option value="1.5">Thin</option>
+            <option value="2.0" selected>Normal</option>
+            <option value="3.0">Bold</option>
+            <option value="4.0">XL</option>
+          </select>
+
+          <label>Highlight radius</label>
+          <select id="highlightRadiusSelect">
+            <option value="0.55">Small</option>
+            <option value="0.75" selected>Normal</option>
+            <option value="1.00">Large</option>
+            <option value="1.25">XL</option>
+          </select>
+
+          <label>Highlight color</label>
+          <input type="color" id="highlightColorPicker" value="#98fb98" />
+
+          <label>Label font</label>
+          <select id="labelFontSelect" title="Font size for compound ID labels under thumbnails">
+            <option value="11">Small</option>
+            <option value="12" selected>Normal</option>
+            <option value="14">Large</option>
+            <option value="16">XL</option>
+          </select>
+
+          <label>Analog labels</label>
+          <select id="analogLabelMode" title="What to show under each analog thumbnail">
+            <option value="label_sims" selected>Label + similarities</option>
+            <option value="label_sims_data">Label + sims + additional data (if provided)</option>
+            <option value="label_only">Label only</option>
+            <option value="label_data">Label + additional data</option>
+          </select>
+
+          <button class="btn" id="dataFieldsBtn" disabled title="Select which additional data fields (SMILES columns / SDF tags) are shown under analogs">Data fields…</button>
+          <span class="mini" id="dataFieldsSummary" title="Selected data fields">No fields</span>
+
+          <div style="flex:1;"></div>
+
+          <label>Export</label>
+          <select id="exportScale" title="Export resolution multiplier">
+            <option value="2">2×</option>
+            <option value="3" selected>3×</option>
+          </select>
+          <label>Per row</label>
+          <input type="number" id="exportCols" min="2" max="12" value="6" />
+          <button class="btn" id="exportBtn" title="Export the grouped view as a high-resolution PNG">Export PNG</button>
+        </div>
+
+        <div class="help" id="groupHelp">
+          <b>Custom regions:</b> define named SAR regions on the parent (atoms), and analogs will be grouped by which region(s) the change attaches to (from MCS).
+        </div>
+      </div>
+
+      <div class="panel" id="regionsPanel" style="display:none;">
+        <h3>Regions</h3>
+        <div class="row">
+          <button class="btn toggleBtn" id="editRegionsBtn">Edit regions</button>
+          <button class="btn" id="addRegionBtn">Add region</button>
+          <button class="btn" id="resetRegionsBtn" title="Reset regions to Left / Middle / Right based on depiction">Reset</button>
+          <button class="btn danger" id="deleteRegionBtn" title="Delete the active region">Delete</button>
+        </div>
+
+        <div class="regionBar" id="regionList"></div>
+
+        <div class="row" style="margin-top:10px;">
+          <label>Active name</label>
+          <input type="text" id="regionNameInput" placeholder="Region name" style="min-width:220px;" />
+          <label>Color</label>
+          <input type="color" id="regionColorInput" value="#ffcc80" />
+          <button class="btn" id="clearRegionAtomsBtn" title="Remove all atoms from the active region">Clear atoms</button>
+          <div style="flex:1;"></div>
+          <span class="badge" id="regionAtomCount">0 atoms</span>
+        </div>
+
+        <div class="help" id="regionHelp">
+          Turn on <b>Edit regions</b>, pick a region chip, then click atoms on the parent to assign them to that region. Regions are <b>exclusive</b> (an atom belongs to only one region).
+        </div>
+      </div>
+
+      <div class="sar" id="sarView" style="display:none;">
+        <div class="parentWrap">
+          <div class="parentCard">
+            <div class="parentHeader">
+              <div class="meta">
+                <div class="id" id="parentId">Parent</div>
+                <div class="smiles" id="parentSmilesLabel"></div>
+              </div>
+              <div class="pill" id="parentStats">0 analogs</div>
+            </div>
+            <div class="parentSvg" id="parentSvg">
+              <!-- parent svg injected -->
+            </div>
+          </div>
+        </div>
+
+        <div class="trays" id="trays">
+          <!-- trays injected here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer" id="drawer">
+      <div class="drawerInner">
+        <div class="drawerHeader">
+          <div class="title" id="selTitle">No selection</div>
+          <div class="subtitle" id="selSubtitle">Click an analog to inspect / edit.</div>
+          <button class="btn small" id="closeDrawerBtn">Close</button>
+        </div>
+
+        <div class="drawerMain">
+          <div class="editorSvg" id="editorSvg">
+            <div style="color:var(--muted); font-size:13px; padding:18px; text-align:center;">
+              Select an analog to view it here.
+            </div>
+          </div>
+
+          <div class="editorControls">
+            <div class="controlsRow">
+              <button class="btn toggleBtn" id="editHighlightsBtn">Edit highlights</button>
+              <button class="btn toggleBtn" id="editStructureBtn">Edit structure</button>
+              <button class="btn" id="atomListBtn">Atom list…</button>
+            </div>
+
+            <div class="controlsRow">
+              <button class="btn" id="resetHighlightsBtn">Reset highlights</button>
+              <button class="btn" id="clearHighlightsBtn">Clear highlights</button>
+              <button class="btn" id="resetGeomBtn">Reset view</button>
+            </div>
+
+            <div class="controlsRow">
+              <button class="btn" id="rotCWBtn">Rotate ↻ 90°</button>
+              <button class="btn" id="rotCCWBtn">Rotate ↺ 90°</button>
+              <button class="btn" id="mirHBtn">Mirror ⇆</button>
+              <button class="btn" id="mirVBtn">Mirror ⇅</button>
+            </div>
+
+            <div class="controlsRow">
+              <button class="btn" id="revertStructBtn">Revert structure</button>
+              <button class="btn danger" id="removeFromGroupBtn">Hide analog</button>
+            </div>
+
+            <div class="smallNote" id="editHint">
+              <b>Tip:</b> the highlight shows atoms <i>not</i> in the MCS vs the parent (i.e., where the analog differs). Turn on “Edit highlights” to tweak.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="status">Ready</div>
+  </div>
+
+  <!-- Atom selector modal -->
+  <div id="atomModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:500; align-items:center; justify-content:center;" onclick="if(event.target===this)closeAtomSelector()">
+    <div style="width:min(560px, 96vw); max-height:80vh; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.35); display:flex; flex-direction:column;">
+      <div style="padding:14px 16px; border-bottom:1px solid var(--border); font-weight:900;">Select atoms to highlight</div>
+      <div id="atomCheckboxList" style="padding:10px 16px; overflow:auto; flex:1;"></div>
+      <div style="padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+        <button class="btn" onclick="atomSelectAll()">All</button>
+        <button class="btn" onclick="atomSelectNone()">None</button>
+        <button class="btn" onclick="atomInvert()">Invert</button>
+        <button class="btn primary" onclick="applyAtomSelection()">OK</button>
+        <button class="btn" onclick="closeAtomSelector()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Data field selector modal -->
+  <div id="fieldsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:520; align-items:center; justify-content:center;" onclick="if(event.target===this)closeFieldSelector()">
+    <div style="width:min(620px, 96vw); max-height:80vh; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.35); display:flex; flex-direction:column;">
+      <div style="padding:14px 16px; border-bottom:1px solid var(--border); font-weight:900;">Select additional data fields</div>
+      <div style="padding:10px 16px; border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <input id="fieldSearchInput" type="text" placeholder="Search fields…" style="flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--border); border-radius:10px; font-size:13px;" />
+        <span class="badge" id="fieldSelectedCount">0 selected</span>
+      </div>
+      <div id="fieldCheckboxList" style="padding:10px 16px; overflow:auto; flex:1;"></div>
+      <div style="padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+        <button class="btn" onclick="fieldSelectAll()">All</button>
+        <button class="btn" onclick="fieldSelectNone()">None</button>
+        <button class="btn" onclick="fieldInvert()">Invert</button>
+        <button class="btn primary" onclick="applyFieldSelection()">OK</button>
+        <button class="btn" onclick="closeFieldSelector()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RDKit.js WASM -->
+  <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+
+  <script>
+    // ============================================================
+    // Analog Explorer (MCS Regions) — v10
+    //  - Rendering controls (font, bond width, highlight color)
+    //  - High-res PNG export (grouped + highlighted)
+    //  - Drag to empty buckets
+    //  - Custom named regions on parent, manual atom assignment
+    // ============================================================
+
+    // ----------------------------
+    // Global state
+    // ----------------------------
+    let RDKit = null;
+
+    let parent = null; // { mol, molblock, smiles, id, coords, bounds:{minX,maxX,leftX,rightX}, fp, screenPos:{w,h,pos} }
+    let molecules = []; // analogs only
+
+    // Additional data fields (from SMILES columns / SDF tags)
+    let availableDataKeys = [];
+    let selectedDataKeys = [];
+    let fieldModalSelected = null;
+
+
+    // Selection / editor
+    let selectedIdx = -1;
+    let editMode = false;
+    let structEditMode = false;
+    let dragState = null;
+
+    // Rendering options
+    let atomFontSize = 0.60;
+    let bondLineWidth = 2.0;
+    let highlightRadius = 0.75;
+
+    let highlightColorHex = '#98fb98';
+    let HIGHLIGHT_COLOR = [0.596, 0.984, 0.596]; // updated from picker
+
+    const PARENT_SITE_COLOR = [1.0, 0.85, 0.35]; // warm yellow ring
+    const REGION_OPACITY = 0.22;
+
+    const SVG_EDITOR = 360;
+    const PARENT_SVG_W = 820;
+    const PARENT_SVG_H = 460;
+
+    // Grouping mode
+    let swapLR = false;
+    let groups = {}; // groupKey -> indices
+    const G_MULT = '__multiple__';
+    const G_OUT = '__outside__';
+    const G_NOMCS = '__no_mcs__';
+    const G_NOCHG = '__no_change__';
+    const G_HIDDEN = '__hidden__';
+
+    const G_L_LEFT = 'lr:left';
+    const G_L_MID = 'lr:middle';
+    const G_L_RIGHT = 'lr:right';
+
+    // Regions (custom grouping)
+    let regionDefs = []; // [{id,name,color,atoms:Set}]
+    let activeRegionId = null;
+    let regionEditMode = false;
+    let regionIdCounter = 1;
+    let atomToRegion = null; // parent atom idx -> regionId | null
+    let regionUpdateTimer = null;
+
+    // ----------------------------
+    // DOM helpers
+    // ----------------------------
+    const el = (id) => document.getElementById(id);
+
+    function setStatus(msg){ el('status').textContent = msg; }
+
+    function setProgress(pct, label){
+      const bar = el('progressBar');
+      bar.style.width = Math.max(0, Math.min(1, pct)) * 100 + '%';
+      el('progressText').textContent = label || '';
+    }
+
+    function showAlert(msg){ alert(msg); }
+
+    function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>\"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function hexToRgb01(hex){
+      const h = (hex || '').replace('#','').trim();
+      if (h.length !== 6) return [0.6, 1.0, 0.6];
+      const r = parseInt(h.slice(0,2),16);
+      const g = parseInt(h.slice(2,4),16);
+      const b = parseInt(h.slice(4,6),16);
+      if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) return [0.6, 1.0, 0.6];
+      return [r/255, g/255, b/255];
+    }
+
+    function insertOverlayAfterBackgroundRect(svgEl, node){
+      // RDKit SVGs usually start with a white background <rect>.
+      // If we insert overlays before it, they get hidden behind the rect.
+      if (!svgEl || !node) return;
+      const kids = Array.from(svgEl.childNodes || []);
+      let rect = null;
+      for (const ch of kids) {
+        if (!ch || ch.nodeType !== 1) continue;
+        const tn = (ch.tagName || '').toLowerCase();
+        if (tn === 'rect') { rect = ch; break; }
+      }
+      if (rect) {
+        if (rect.nextSibling) svgEl.insertBefore(node, rect.nextSibling);
+        else svgEl.appendChild(node);
+      } else {
+        if (svgEl.firstChild) svgEl.insertBefore(node, svgEl.firstChild);
+        else svgEl.appendChild(node);
+      }
+    }
+
+    // ----------------------------
+    // RDKit init
+    // ----------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      // If the RDKit script failed to load (blocked CDN / offline), initRDKitModule will be undefined.
+      if (typeof initRDKitModule !== 'function') {
+        el('loading').innerHTML = `
+          <div style="max-width:520px; padding:18px; text-align:center;">
+            <div style="font-size:18px; font-weight:900; color:#b91c1c; margin-bottom:8px;">Failed to load RDKit</div>
+            <div style="font-size:13px; color:#6b7280; line-height:1.35;">RDKit initialization function is missing. The RDKit script likely failed to load.</div>
+            <div style="font-size:13px; color:#6b7280; margin-top:12px; line-height:1.35;">
+              This app loads RDKit from a CDN. If you are on a restricted network, allow access to <b>unpkg.com</b>.
+            </div>
+          </div>`;
+        console.error('initRDKitModule is not available. RDKit script failed to load.');
+        return;
+      }
+
+      initRDKitModule({
+        locateFile: (file) => `https://unpkg.com/@rdkit/rdkit/dist/${file}`
+      }).then((instance) => {
+        RDKit = instance;
+        el('rdkitVersion').textContent = 'RDKit ' + RDKit.version();
+        el('loading').style.display = 'none';
+        el('app').style.display = 'block';
+        el('buildBtn').disabled = false;
+        setStatus('RDKit loaded. Ready.');
+      }).catch((err) => {
+        el('loading').innerHTML = `
+          <div style="max-width:520px; padding:18px; text-align:center;">
+            <div style="font-size:18px; font-weight:900; color:#b91c1c; margin-bottom:8px;">Failed to load RDKit</div>
+            <div style="font-size:13px; color:#6b7280; line-height:1.35;">${escapeHtml(err && err.message ? err.message : String(err))}</div>
+            <div style="font-size:13px; color:#6b7280; margin-top:12px; line-height:1.35;">
+              This app loads RDKit from a CDN. If you are on a restricted network, allow access to <b>unpkg.com</b>.
+            </div>
+          </div>`;
+      });
+
+      wireUI();
+
+      // Global error handlers (avoid silent "stuck on rendering")
+      window.addEventListener('error', (ev) => {
+        try {
+          setProgress(0, 'Idle');
+          setStatus('Error: ' + (ev && ev.message ? ev.message : 'Unknown error'));
+        } catch(ex) {}
+        console.error(ev && ev.error ? ev.error : ev);
+      });
+
+      window.addEventListener('unhandledrejection', (ev) => {
+        try {
+          const msg = (ev && ev.reason && ev.reason.message) ? ev.reason.message : String(ev.reason || ev);
+          setProgress(0, 'Idle');
+          setStatus('Error: ' + msg);
+        } catch(ex) {}
+        console.error(ev && ev.reason ? ev.reason : ev);
+      });
+    });
+
+    // ----------------------------
+    // UI wiring
+    // ----------------------------
+    function wireUI(){
+      el('buildBtn').addEventListener('click', buildAll);
+      el('clearBtn').addEventListener('click', () => { cleanupAll(); renderEmpty(); });
+
+      // Similarity filter
+      el('simMin').addEventListener('input', () => {
+        el('simMinLabel').textContent = Number(el('simMin').value).toFixed(2);
+      });
+      el('simMin').addEventListener('change', () => applyGroupingAndRender());
+
+      // Thumb size
+      el('thumbSize').addEventListener('input', () => {
+        el('thumbSizeLabel').textContent = el('thumbSize').value;
+        updateThumbWidths();
+      });
+      el('thumbSize').addEventListener('change', () => renderTrays());
+
+      // Grouping mode
+      el('groupingMode').addEventListener('change', () => {
+        updateGroupingUI();
+        applyGroupingAndRender();
+      });
+
+      // Swap L/R (only meaningful in lr3 mode)
+      el('swapLRBtn').addEventListener('click', () => {
+        swapLR = !swapLR;
+        el('swapLRBtn').textContent = swapLR ? 'Swap Left/Right ✓' : 'Swap Left/Right';
+        applyGroupingAndRender();
+      });
+
+      el('rebuildGroupsBtn').addEventListener('click', () => applyGroupingAndRender());
+
+      // Rendering controls
+      el('atomFontSelect').addEventListener('change', () => {
+        atomFontSize = Number(el('atomFontSelect').value) || 0.6;
+        rerenderAll();
+      });
+
+      el('bondWidthSelect').addEventListener('change', () => {
+        bondLineWidth = Number(el('bondWidthSelect').value) || 2.0;
+        rerenderAll();
+      });
+
+      el('highlightRadiusSelect').addEventListener('change', () => {
+        highlightRadius = Number(el('highlightRadiusSelect').value) || 0.75;
+        rerenderAll();
+      });
+
+      el('highlightColorPicker').addEventListener('input', () => {
+        highlightColorHex = el('highlightColorPicker').value || '#98fb98';
+        HIGHLIGHT_COLOR = hexToRgb01(highlightColorHex);
+        rerenderAll();
+      });
+
+      el('labelFontSelect').addEventListener('change', () => {
+        const px = Number(el('labelFontSelect').value) || 12;
+        document.documentElement.style.setProperty('--idFontPx', px + 'px');
+      });
+
+      // Analog label mode (what appears under each analog)
+      el('analogLabelMode').addEventListener('change', () => {
+        renderTrays();
+      });
+
+      // Additional data fields (from SMILES columns / SDF tags)
+      el('dataFieldsBtn').addEventListener('click', () => openFieldSelector());
+      el('fieldSearchInput').addEventListener('input', () => renderFieldCheckboxList());
+
+      // initialize summary
+      updateDataFieldsSummary();
+
+      // Export
+      el('exportBtn').addEventListener('click', exportGroupedPNG);
+
+      // Regions panel controls
+      el('editRegionsBtn').addEventListener('click', () => {
+        regionEditMode = !regionEditMode;
+        el('editRegionsBtn').classList.toggle('active', regionEditMode);
+        setStatus(regionEditMode ? 'Region edit: ON (click parent atoms)' : 'Region edit: OFF');
+        renderParentForSelection();
+      });
+
+      el('addRegionBtn').addEventListener('click', () => {
+        if (!parent) return showAlert('Build the view first (need a parent).');
+        const name = `Region ${regionDefs.length + 1}`;
+        const color = pickNextRegionColor();
+        addRegion(name, color, new Set());
+        setActiveRegion(regionDefs[regionDefs.length - 1].id);
+        scheduleRegionRegroup();
+        renderParentForSelection();
+      });
+
+      el('resetRegionsBtn').addEventListener('click', () => {
+        if (!parent) return;
+        initDefaultRegions();
+        scheduleRegionRegroup();
+        renderParentForSelection();
+      });
+
+      el('deleteRegionBtn').addEventListener('click', () => {
+        if (!parent) return;
+        deleteActiveRegion();
+      });
+
+      el('regionNameInput').addEventListener('input', () => {
+        if (!activeRegionId) return;
+        const r = regionDefs.find(x => x.id === activeRegionId);
+        if (!r) return;
+        r.name = el('regionNameInput').value || r.name;
+        renderRegionChips();
+        applyGroupingAndRender();
+      });
+
+      el('regionColorInput').addEventListener('input', () => {
+        if (!activeRegionId) return;
+        const r = regionDefs.find(x => x.id === activeRegionId);
+        if (!r) return;
+        r.color = el('regionColorInput').value || r.color;
+        renderRegionChips();
+        renderParentForSelection();
+      });
+
+      el('clearRegionAtomsBtn').addEventListener('click', () => {
+        if (!activeRegionId) return;
+        clearActiveRegionAtoms();
+      });
+
+      // Drawer
+      el('toggleDrawerBtn').addEventListener('click', () => toggleDrawer());
+      el('closeDrawerBtn').addEventListener('click', () => closeDrawer());
+
+      // Editor buttons
+      el('editHighlightsBtn').addEventListener('click', toggleEditHighlights);
+      el('editStructureBtn').addEventListener('click', toggleStructEdit);
+      el('atomListBtn').addEventListener('click', openAtomSelector);
+
+      el('resetHighlightsBtn').addEventListener('click', () => {
+        if (selectedIdx < 0) return;
+        molecules[selectedIdx].highlightAtoms = new Set(molecules[selectedIdx].originalHighlightAtoms);
+        updateSelectedRenders();
+        setStatus('Reset highlights.');
+      });
+      el('clearHighlightsBtn').addEventListener('click', () => {
+        if (selectedIdx < 0) return;
+        molecules[selectedIdx].highlightAtoms.clear();
+        updateSelectedRenders();
+        setStatus('Cleared highlights.');
+      });
+
+      el('rotCWBtn').addEventListener('click', () => rotateSelected(90));
+      el('rotCCWBtn').addEventListener('click', () => rotateSelected(-90));
+      el('mirHBtn').addEventListener('click', () => mirrorSelected('h'));
+      el('mirVBtn').addEventListener('click', () => mirrorSelected('v'));
+      el('resetGeomBtn').addEventListener('click', () => resetSelectedView());
+      el('revertStructBtn').addEventListener('click', () => revertSelectedStructure());
+
+      el('removeFromGroupBtn').addEventListener('click', () => {
+        if (selectedIdx < 0) return;
+        molecules[selectedIdx].hidden = true;
+        molecules[selectedIdx].manualGroup = null;
+        applyGroupingAndRender();
+        setStatus('Hidden analog (you can rebuild to show it again).');
+      });
+
+      // Fullscreen
+      el('fullscreenBtn').addEventListener('click', toggleFullscreen);
+
+      // Parent mode UI
+      el('parentMode').addEventListener('change', () => {
+        const isRef = el('parentMode').value === 'ref';
+        el('parentSmiles').disabled = !isRef;
+        el('parentSmiles').style.opacity = isRef ? '1' : '0.6';
+      });
+      el('parentSmiles').disabled = true;
+      el('parentSmiles').style.opacity = '0.6';
+
+      // Default labels
+      el('simMinLabel').textContent = Number(el('simMin').value).toFixed(2);
+      el('thumbSizeLabel').textContent = el('thumbSize').value;
+
+      updateGroupingUI();
+      renderEmpty();
+    }
+
+    function toggleFullscreen(){
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(()=>{});
+      } else {
+        document.exitFullscreen().catch(()=>{});
+      }
+    }
+
+    function updateGroupingUI(){
+      const mode = el('groupingMode').value;
+      const showRegions = (mode === 'regions');
+      el('regionsPanel').style.display = showRegions ? 'block' : 'none';
+
+      el('swapLRBtn').style.display = (mode === 'lr3') ? 'inline-block' : 'none';
+
+      const help = el('groupHelp');
+      if (mode === 'regions') {
+        help.innerHTML = '<b>Custom regions:</b> define named SAR regions on the parent (atoms), and analogs will be grouped by which region(s) the change attaches to (from MCS).';
+      } else {
+        help.innerHTML = '<b>Auto L/M/R:</b> analogs are grouped by left/middle/right change attachment sites on the parent depiction (derived from MCS).';
+      }
+
+      // If switching to regions and none exist (e.g., after build), create defaults
+      if (mode === 'regions' && parent && regionDefs.length === 0) {
+        initDefaultRegions();
+      }
+
+      renderRegionChips();
+      renderParentForSelection();
+    }
+
+    function rerenderAll(){
+      // Rendering options changed: redraw parent + trays + editor
+      if (parent) parent.screenPos = null; // re-compute atom screen positions for overlays / click targets
+      renderParentForSelection();
+      renderTrays();
+      renderSelectedInEditor();
+    }
+
+    // ----------------------------
+    // Parsing
+    // ----------------------------
+    function isLikelySmiles(text) {
+      const smilesChars = new Set('cCnNoOpPsSFfIiBbr[]()=#@+-/\\123456789.%');
+      let common = 0;
+      for (const ch of text) {
+        if (smilesChars.has(ch)) common++;
+      }
+      return text.length > 0 && (common / text.length) > 0.5;
+    }
+
+    function parseSMILES(text) {
+      const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim() && !l.trim().startsWith('#'));
+      if (lines.length === 0) return [];
+
+      const rawMols = [];
+      let headers = null;
+
+      for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+        const line = lines[lineNum].trim();
+        const parts = line.includes('\t') ? line.split('\t') : line.split(/\s+/);
+        if (parts.length === 0) continue;
+
+        // Detect header
+        if (headers === null) {
+          const firstUpper = (parts[0] || '').toUpperCase();
+          const looksHeader = ['SMILES','SMI','SMILE','CANONICAL_SMILES','CANONICAL'].includes(firstUpper) || !isLikelySmiles(parts[0]);
+          if (looksHeader) {
+            headers = parts;
+            continue;
+          } else {
+            headers = ['SMILES', 'Catalog ID'].concat(
+              Array.from({length: Math.max(0, parts.length - 2)}, (_, i) => 'Property_' + (i + 2))
+            );
+          }
+        }
+
+        // Heuristic: accept either SMILES-first or ID-first
+        let smiles = parts[0];
+        let id = parts.length > 1 ? parts[1] : '';
+        if (!isLikelySmiles(smiles) && parts.length > 1 && isLikelySmiles(parts[1])) {
+          id = parts[0];
+          smiles = parts[1];
+        }
+
+        const mol = RDKit.get_mol(smiles);
+        if (!mol || !mol.is_valid()) {
+          if (mol) mol.delete();
+          continue;
+        }
+
+        const properties = {};
+        properties['Catalog ID'] = (id && id.trim()) ? id.trim() : ('Mol_' + (lineNum + 1));
+
+        for (let col = 2; col < parts.length; col++) {
+          const propName = headers && col < headers.length ? headers[col].trim() : ('Property_' + col);
+          const propValue = parts[col].trim();
+          if (propValue) properties[propName] = propValue;
+        }
+
+        rawMols.push({ mol, smiles, properties });
+      }
+
+      return rawMols;
+    }
+
+    function parseSDF(text) {
+      const blocks = text.split('$$$$');
+      const rawMols = [];
+
+      for (const block of blocks) {
+        const trimmed = block.trim();
+        if (!trimmed) continue;
+
+        const endIdx = trimmed.indexOf('M  END');
+        if (endIdx < 0) continue;
+
+        const molblock = trimmed.substring(0, endIdx + 6);
+        const propsText = trimmed.substring(endIdx + 6);
+
+        const mol = RDKit.get_mol(molblock);
+        if (!mol || !mol.is_valid()) {
+          if (mol) mol.delete();
+          continue;
+        }
+
+        const properties = {};
+        const propRegex = />\s*<([^>]+)>\s*\n([^\n]*)/g;
+        let match;
+        while ((match = propRegex.exec(propsText)) !== null) {
+          properties[match[1].trim()] = match[2].trim();
+        }
+
+        const firstLine = trimmed.split(/\r\n|\n|\r/)[0].trim();
+        if (!properties['Catalog ID'] && firstLine) properties['Catalog ID'] = firstLine;
+
+        rawMols.push({ mol, smiles: null, properties });
+      }
+
+      return rawMols;
+    }
+
+    async function readInputToRawMols() {
+      const fileInput = el('fileInput');
+      const paste = el('pasteBox').value.trim();
+
+      if (fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const name = (file.name || '').toLowerCase();
+        const text = await file.text();
+        if (name.endsWith('.sdf')) return parseSDF(text);
+        return parseSMILES(text);
+      }
+
+      if (paste) {
+        return parseSMILES(paste);
+      }
+
+      return [];
+    }
+
+    // ----------------------------
+    // Fingerprints (ECFP4) and similarity
+    // ----------------------------
+    const POPCNT_TABLE = (() => {
+      const t = new Uint8Array(256);
+      for (let i = 0; i < 256; i++) {
+        let x = i;
+        let c = 0;
+        while (x) { c += (x & 1); x >>= 1; }
+        t[i] = c;
+      }
+      return t;
+    })();
+
+    function tanimotoUint8(fpA, fpB) {
+      if (!fpA || !fpB) return 0;
+      const len = Math.min(fpA.length, fpB.length);
+      let inter = 0;
+      let union = 0;
+
+      // Two possible representations:
+      //  - packed bit vector (len ~ nBits/8)
+      //  - 0/1 per bit (len ~ nBits)
+      if (len > 512) {
+        for (let i = 0; i < len; i++) {
+          const a = fpA[i] ? 1 : 0;
+          const b = fpB[i] ? 1 : 0;
+          inter += (a & b);
+          union += (a | b);
+        }
+      } else {
+        for (let i = 0; i < len; i++) {
+          inter += POPCNT_TABLE[fpA[i] & fpB[i]];
+          union += POPCNT_TABLE[fpA[i] | fpB[i]];
+        }
+      }
+
+      return union ? (inter / union) : 1.0;
+    }
+
+    function getMorganFPBytes(mol, radius=2, nBits=2048) {
+      if (!mol) return null;
+      try {
+        const opts = JSON.stringify({
+          radius: radius,
+          nBits: nBits,
+          fpSize: nBits,
+          useFeatures: false,
+          useChirality: false,
+          includeChirality: false
+        });
+        return mol.get_morgan_fp_as_uint8array(opts);
+      } catch (e1) {
+        try {
+          return mol.get_morgan_fp_as_uint8array();
+        } catch (e2) {
+          return null;
+        }
+      }
+    }
+
+    // ----------------------------
+    // MCS mapping
+    // ----------------------------
+    function parseMolGraph(molblock) {
+      const lines = molblock.split(/\r\n|\n|\r/);
+      let countsIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { countsIdx = i; break; }
+      }
+      if (countsIdx < 0) return null;
+      const nAtoms = parseInt(lines[countsIdx].substring(0, 3).trim());
+      const nBonds = parseInt(lines[countsIdx].substring(3, 6).trim());
+      if (!Number.isFinite(nAtoms) || nAtoms <= 0) return null;
+      const atoms = [];
+      for (let i = 0; i < nAtoms; i++) {
+        const line = lines[countsIdx + 1 + i] || '';
+        const element = line.substring(31, 34).trim();
+        atoms.push({ element, adj: {} });
+      }
+      for (let i = 0; i < nBonds; i++) {
+        const line = lines[countsIdx + 1 + nAtoms + i] || '';
+        const a1 = parseInt(line.substring(0, 3).trim()) - 1;
+        const a2 = parseInt(line.substring(3, 6).trim()) - 1;
+        const bt = parseInt(line.substring(6, 9).trim());
+        if (Number.isFinite(a1) && Number.isFinite(a2) && a1 >= 0 && a2 >= 0 && a1 < nAtoms && a2 < nAtoms) {
+          atoms[a1].adj[a2] = bt;
+          atoms[a2].adj[a1] = bt;
+        }
+      }
+      return atoms;
+    }
+
+    function bondsCompatible(bt1, bt2) {
+      if (bt1 === bt2) return true;
+      // Allow single/double/aromatic to match (kekule-ish)
+      if (bt1 > 0 && bt2 > 0 && bt1 !== 3 && bt2 !== 3) return true;
+      return false;
+    }
+
+    function extendMapping(g1, g2, fwd, rev) {
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const [i1, j1] of fwd) {
+          for (const i2s of Object.keys(g1[i1].adj)) {
+            const i2 = parseInt(i2s);
+            if (fwd.has(i2)) continue;
+            const bt1 = g1[i1].adj[i2];
+            let bestJ2 = -1, bestScore = -1;
+            for (const j2s of Object.keys(g2[j1].adj)) {
+              const j2 = parseInt(j2s);
+              if (rev.has(j2)) continue;
+              if (g1[i2].element !== g2[j2].element) continue;
+              if (!bondsCompatible(bt1, g2[j1].adj[j2])) continue;
+              let ok = true;
+              for (const [mi, mj] of fwd) {
+                const b1 = g1[i2].adj[mi];
+                const b2 = g2[j2].adj[mj];
+                if ((b1 !== undefined) !== (b2 !== undefined)) { ok = false; break; }
+              }
+              if (!ok) continue;
+              const score = Object.keys(g2[j2].adj).length;
+              if (score > bestScore) { bestScore = score; bestJ2 = j2; }
+            }
+            if (bestJ2 >= 0) {
+              fwd.set(i2, bestJ2);
+              rev.set(bestJ2, i2);
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+
+    function findMCS_JS(parentMol, mol) {
+      const g1 = parseMolGraph(parentMol.get_molblock());
+      const g2 = parseMolGraph(mol.get_molblock());
+      if (!g1 || !g2) return { parentAtoms: [], molAtoms: [], method: 'js' };
+
+      let bestFwd = new Map();
+      const startTime = Date.now();
+      const TIMEOUT = 2500;
+
+      const elCount = {};
+      g1.forEach(a => { elCount[a.element] = (elCount[a.element] || 0) + 1; });
+      const atomOrder = g1.map((_, i) => i).sort((a, b) => (elCount[g1[a].element] || 0) - (elCount[g1[b].element] || 0));
+
+      for (const i of atomOrder) {
+        if (Date.now() - startTime > TIMEOUT) break;
+        for (let j = 0; j < g2.length; j++) {
+          if (g1[i].element !== g2[j].element) continue;
+          if (Date.now() - startTime > TIMEOUT) break;
+
+          const fwd = new Map([[i, j]]);
+          const rev = new Map([[j, i]]);
+          extendMapping(g1, g2, fwd, rev);
+
+          if (fwd.size > bestFwd.size) {
+            bestFwd = new Map(fwd);
+            if (bestFwd.size >= Math.min(g1.length, g2.length) - 2) break;
+          }
+        }
+        if (bestFwd.size >= Math.min(g1.length, g2.length) - 2) break;
+      }
+
+      const parentAtoms = Array.from(bestFwd.keys()).sort((a,b)=>a-b);
+      const molAtoms = parentAtoms.map(pa => bestFwd.get(pa));
+      return { parentAtoms, molAtoms, method: 'js' };
+    }
+
+    function findMCSMapping(parentMol, mol) {
+      // Returns {parentAtoms:[], molAtoms:[], smarts:'', method:'mcs'|'substruct'|'js'}
+      if (typeof RDKit.get_mcs_as_smarts === 'function') {
+        let molList = null;
+        try {
+          molList = new RDKit.MolList();
+          molList.append(parentMol);
+          molList.append(mol);
+          const mcsSmarts = RDKit.get_mcs_as_smarts(molList, JSON.stringify({
+            Timeout: 5,
+            MaximizeBonds: true,
+            RingMatchesRingOnly: true,
+            CompleteRingsOnly: true
+          }));
+          molList.delete();
+          molList = null;
+
+          if (mcsSmarts && mcsSmarts.length > 0) {
+            const qmol = RDKit.get_qmol(mcsSmarts);
+            if (qmol && qmol.is_valid()) {
+              const pm = parentMol.get_substruct_match(qmol);
+              const mm = mol.get_substruct_match(qmol);
+              qmol.delete();
+
+              const pAtoms = pm ? (JSON.parse(pm).atoms || JSON.parse(pm)) : [];
+              const mAtoms = mm ? (JSON.parse(mm).atoms || JSON.parse(mm)) : [];
+              if (Array.isArray(pAtoms) && Array.isArray(mAtoms) && pAtoms.length > 0 && pAtoms.length === mAtoms.length) {
+                return { parentAtoms: pAtoms, molAtoms: mAtoms, smarts: mcsSmarts, method: 'mcs' };
+              }
+            } else {
+              if (qmol) qmol.delete();
+            }
+          }
+        } catch (e) {
+          console.warn('MCS mapping failed, falling back', e);
+          if (molList) { try { molList.delete(); } catch(ex){} }
+        }
+      }
+
+      // Fallback: if parent is substructure of mol
+      try {
+        const matchStr = mol.get_substruct_match(parentMol);
+        if (matchStr) {
+          const parsed = JSON.parse(matchStr);
+          const mAtoms = parsed.atoms || parsed;
+          if (Array.isArray(mAtoms) && mAtoms.length > 0) {
+            const pAtoms = Array.from({length: parentMol.get_num_atoms()}, (_, i) => i).slice(0, mAtoms.length);
+            return { parentAtoms: pAtoms, molAtoms: mAtoms, smarts: '', method: 'substruct' };
+          }
+        }
+      } catch (e) {}
+
+      return findMCS_JS(parentMol, mol);
+    }
+
+    // ----------------------------
+    // Attachment sites on parent (from MCS mapping)
+    // ----------------------------
+    function getParentAttachmentAtoms(parentMol, mol, mapping) {
+      const pAtoms = mapping.parentAtoms || [];
+      const mAtoms = mapping.molAtoms || [];
+      if (pAtoms.length === 0 || mAtoms.length === 0 || pAtoms.length !== mAtoms.length) return new Set();
+
+      const molToParent = new Map();
+      for (let i = 0; i < mAtoms.length; i++) molToParent.set(mAtoms[i], pAtoms[i]);
+
+      const matchedMolSet = new Set(mAtoms);
+      const g = parseMolGraph(mol.get_molblock());
+      if (!g) return new Set();
+
+      const attachment = new Set();
+      for (let u = 0; u < g.length; u++) {
+        if (matchedMolSet.has(u)) continue; // only unmatched atoms
+        const neigh = Object.keys(g[u].adj);
+        for (const vs of neigh) {
+          const v = parseInt(vs);
+          if (matchedMolSet.has(v)) {
+            const pa = molToParent.get(v);
+            if (pa !== undefined && pa !== null) attachment.add(pa);
+          }
+        }
+      }
+
+      return attachment;
+    }
+
+    // ----------------------------
+    // Coords and transforms
+    // ----------------------------
+    function parseMolblockAtomCoords(molblock) {
+      const lines = molblock.split(/\r\n|\n|\r/);
+      let countsLineIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { countsLineIdx = i; break; }
+      }
+      if (countsLineIdx < 0) return [];
+      const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+      if (!Number.isFinite(numAtoms) || numAtoms <= 0) return [];
+      const coords = [];
+      const atomStartIdx = countsLineIdx + 1;
+      for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+        const line = lines[i] || '';
+        const x = parseFloat(line.substring(0, 10).trim());
+        const y = parseFloat(line.substring(10, 20).trim());
+        coords.push({ x: Number.isFinite(x) ? x : 0, y: Number.isFinite(y) ? y : 0 });
+      }
+      return coords;
+    }
+
+    function computeBounds(coords) {
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const c of coords) {
+        minX = Math.min(minX, c.x);
+        maxX = Math.max(maxX, c.x);
+        minY = Math.min(minY, c.y);
+        maxY = Math.max(maxY, c.y);
+      }
+      if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
+      return { minX, maxX, minY, maxY };
+    }
+
+    function transformMolblock(molblock, rotation, mirrorH, mirrorV) {
+      if (rotation === 0 && !mirrorH && !mirrorV) return molblock;
+      const lines = molblock.split(/\r\n|\n|\r/);
+      let countsLineIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { countsLineIdx = i; break; }
+      }
+      if (countsLineIdx < 0) return molblock;
+
+      const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+      if (!Number.isFinite(numAtoms) || numAtoms <= 0) return molblock;
+
+      const atomStartIdx = countsLineIdx + 1;
+      const rad = (rotation % 360) * Math.PI / 180;
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+
+      for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+        const line = lines[i] || '';
+        if (line.length < 30) continue;
+        let x = parseFloat(line.substring(0, 10).trim());
+        let y = parseFloat(line.substring(10, 20).trim());
+        const rest = line.substring(20);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+        const rx = x * cosR - y * sinR;
+        const ry = x * sinR + y * cosR;
+        x = rx; y = ry;
+
+        if (mirrorH) x = -x;
+        if (mirrorV) y = -y;
+
+        lines[i] = x.toFixed(4).padStart(10) + y.toFixed(4).padStart(10) + rest;
+      }
+      return lines.join('\n');
+    }
+
+    // ----------------------------
+    // Rendering RDKit SVG
+    // ----------------------------
+    function renderMolSvgFromMolblockWH(molblock, width, height, highlightAtomsSet, highlightColor, radius) {
+      const mol = RDKit.get_mol(molblock);
+      if (!mol || !mol.is_valid()) {
+        if (mol) mol.delete();
+        return `<svg viewBox="0 0 ${width} ${height}"><text x="50%" y="50%" text-anchor="middle" font-size="14" fill="#6b7280">Error</text></svg>`;
+      }
+
+      const atoms = highlightAtomsSet ? Array.from(highlightAtomsSet) : [];
+      const details = JSON.stringify({
+        atoms: atoms,
+        bonds: [],
+        width: width,
+        height: height,
+        highlightColour: highlightColor || HIGHLIGHT_COLOR,
+        highlightRadius: (radius !== undefined && radius !== null) ? radius : highlightRadius,
+        bondLineWidth: bondLineWidth,
+        baseFontSize: atomFontSize
+      });
+
+      let svg;
+      try {
+        svg = mol.get_svg_with_highlights(details);
+      } catch (e) {
+        svg = mol.get_svg(width, height);
+      }
+
+      mol.delete();
+      return svg;
+    }
+
+    function renderMolSvg(molData, size) {
+      const tMolblock = transformMolblock(molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV);
+      return renderMolSvgFromMolblockWH(tMolblock, size, size, molData.highlightAtoms, HIGHLIGHT_COLOR, highlightRadius);
+    }
+
+    function renderParentBaseSvg() {
+      return renderMolSvgFromMolblockWH(parent.molblock, PARENT_SVG_W, PARENT_SVG_H, null, HIGHLIGHT_COLOR, highlightRadius);
+    }
+
+    // ----------------------------
+    // Atom screen positions from RDKit SVG (for click targets / overlays)
+    // ----------------------------
+    function getAtomScreenPositionsFromMolblock(molblock, width, height) {
+      const tempMol = RDKit.get_mol(molblock);
+      if (!tempMol || !tempMol.is_valid()) {
+        if (tempMol) tempMol.delete();
+        return [];
+      }
+      const numAtoms = tempMol.get_num_atoms();
+      const allAtoms = [];
+      for (let i = 0; i < numAtoms; i++) allAtoms.push(i);
+
+      const details = JSON.stringify({
+        atoms: allAtoms,
+        bonds: [],
+        width: width,
+        height: height,
+        highlightColour: [1,1,1],
+        highlightRadius: 0.001,
+        bondLineWidth: bondLineWidth,
+        baseFontSize: atomFontSize
+      });
+
+      let svg;
+      try {
+        svg = tempMol.get_svg_with_highlights(details);
+      } catch (e) {
+        tempMol.delete();
+        return [];
+      }
+      tempMol.delete();
+
+      const parser = new DOMParser();
+      const svgDoc = parser.parseFromString(svg, 'image/svg+xml');
+      const ellipses = svgDoc.querySelectorAll('ellipse, circle');
+      const positions = new Array(numAtoms).fill(null);
+      for (const ellipse of ellipses) {
+        const cls = ellipse.getAttribute('class') || '';
+        const m = cls.match(/atom-(\d+)/);
+        if (!m) continue;
+        const idx = parseInt(m[1]);
+        if (Number.isFinite(idx) && idx >= 0 && idx < numAtoms) {
+          positions[idx] = { x: parseFloat(ellipse.getAttribute('cx')), y: parseFloat(ellipse.getAttribute('cy')) };
+        }
+      }
+      return positions;
+    }
+
+    function getAtomScreenPositions(molData, size) {
+      const tMolblock = transformMolblock(molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV);
+      return getAtomScreenPositionsFromMolblock(tMolblock, size, size);
+    }
+
+    // ----------------------------
+    // Regions helpers
+    // ----------------------------
+    function newRegionId(){ return 'r' + (regionIdCounter++); }
+
+    function pickNextRegionColor(){
+      const palette = ['#ffd54f', '#90caf9', '#a5d6a7', '#f48fb1', '#ce93d8', '#ffab91', '#80cbc4', '#bcaaa4'];
+      return palette[regionDefs.length % palette.length];
+    }
+
+    function ensureAtomToRegion(){
+      if (!parent) return;
+      const n = parent.mol.get_num_atoms();
+      if (!atomToRegion || atomToRegion.length !== n) {
+        atomToRegion = new Array(n).fill(null);
+      }
+    }
+
+    function addRegion(name, color, atomsSet){
+      ensureAtomToRegion();
+      const id = newRegionId();
+      const atoms = atomsSet ? new Set(atomsSet) : new Set();
+
+      // Enforce exclusivity
+      for (const a of atoms) {
+        if (a < 0 || a >= atomToRegion.length) continue;
+        const prev = atomToRegion[a];
+        if (prev && prev !== id) {
+          const pr = regionDefs.find(r => r.id === prev);
+          if (pr) pr.atoms.delete(a);
+        }
+        atomToRegion[a] = id;
+      }
+
+      regionDefs.push({ id, name: name || ('Region ' + id), color: color || pickNextRegionColor(), atoms });
+      if (!activeRegionId) activeRegionId = id;
+      renderRegionChips();
+    }
+
+    function setActiveRegion(id){
+      activeRegionId = id;
+      const r = regionDefs.find(x => x.id === id);
+      if (r) {
+        el('regionNameInput').value = r.name;
+        el('regionColorInput').value = r.color;
+        el('regionAtomCount').textContent = `${r.atoms.size} atoms`;
+      } else {
+        el('regionAtomCount').textContent = `0 atoms`;
+      }
+      renderRegionChips();
+      renderParentForSelection();
+    }
+
+    function renderRegionChips(){
+      const list = el('regionList');
+      if (!list) return;
+
+      list.innerHTML = '';
+
+      if (!parent) {
+        const chip = document.createElement('div');
+        chip.className = 'regionChip disabled';
+        chip.textContent = 'Build view to edit regions';
+        list.appendChild(chip);
+        el('deleteRegionBtn').disabled = true;
+        el('clearRegionAtomsBtn').disabled = true;
+        el('regionNameInput').disabled = true;
+        el('regionColorInput').disabled = true;
+        el('regionAtomCount').textContent = '0 atoms';
+        return;
+      }
+
+      el('deleteRegionBtn').disabled = (regionDefs.length === 0);
+      el('clearRegionAtomsBtn').disabled = (regionDefs.length === 0);
+      el('regionNameInput').disabled = (regionDefs.length === 0);
+      el('regionColorInput').disabled = (regionDefs.length === 0);
+
+      for (const r of regionDefs) {
+        const chip = document.createElement('div');
+        chip.className = 'regionChip' + (r.id === activeRegionId ? ' active' : '');
+        chip.title = 'Click to select region';
+        chip.addEventListener('click', () => setActiveRegion(r.id));
+
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.style.background = r.color;
+
+        const name = document.createElement('div');
+        name.textContent = r.name;
+
+        const count = document.createElement('div');
+        count.className = 'count';
+        count.textContent = `(${r.atoms.size})`;
+
+        chip.appendChild(dot);
+        chip.appendChild(name);
+        chip.appendChild(count);
+        list.appendChild(chip);
+      }
+
+      if (activeRegionId && regionDefs.length > 0) {
+        const r = regionDefs.find(x => x.id === activeRegionId);
+        if (r) {
+          el('regionNameInput').value = r.name;
+          el('regionColorInput').value = r.color;
+          el('regionAtomCount').textContent = `${r.atoms.size} atoms`;
+        }
+      }
+    }
+
+    function clearActiveRegionAtoms(){
+      if (!activeRegionId) return;
+      ensureAtomToRegion();
+      const r = regionDefs.find(x => x.id === activeRegionId);
+      if (!r) return;
+      for (const a of r.atoms) {
+        if (a >= 0 && a < atomToRegion.length && atomToRegion[a] === r.id) atomToRegion[a] = null;
+      }
+      r.atoms.clear();
+      renderRegionChips();
+      renderParentForSelection();
+      scheduleRegionRegroup();
+      setStatus('Cleared atoms from region.');
+    }
+
+    function deleteActiveRegion(){
+      if (!activeRegionId) return;
+      ensureAtomToRegion();
+      const idx = regionDefs.findIndex(x => x.id === activeRegionId);
+      if (idx < 0) return;
+
+      const toDelete = regionDefs[idx];
+
+      // Remove atoms from mapping
+      for (const a of toDelete.atoms) {
+        if (a >= 0 && a < atomToRegion.length && atomToRegion[a] === toDelete.id) atomToRegion[a] = null;
+      }
+
+      regionDefs.splice(idx, 1);
+
+      // Clear manual groups that reference deleted region
+      const gkey = 'reg:' + toDelete.id;
+      for (const m of molecules) {
+        if (m.manualGroup === gkey) m.manualGroup = null;
+      }
+
+      // Select next
+      activeRegionId = regionDefs.length ? regionDefs[Math.min(idx, regionDefs.length - 1)].id : null;
+
+      renderRegionChips();
+      renderParentForSelection();
+      scheduleRegionRegroup();
+      setStatus('Deleted region.');
+    }
+
+    function initDefaultRegions(){
+      if (!parent) return;
+      ensureAtomToRegion();
+
+      regionDefs = [];
+      activeRegionId = null;
+      atomToRegion.fill(null);
+
+      const leftAtoms = new Set();
+      const midAtoms = new Set();
+      const rightAtoms = new Set();
+
+      for (let i = 0; i < parent.coords.length; i++) {
+        const x = parent.coords[i].x;
+        if (x < parent.bounds.leftX) leftAtoms.add(i);
+        else if (x > parent.bounds.rightX) rightAtoms.add(i);
+        else midAtoms.add(i);
+      }
+
+      addRegion('Left', '#90caf9', leftAtoms);
+      addRegion('Middle', '#a5d6a7', midAtoms);
+      addRegion('Right', '#ffcc80', rightAtoms);
+      setActiveRegion(regionDefs[0].id);
+
+      setStatus('Reset regions to Left / Middle / Right.');
+    }
+
+    function toggleParentAtomInActiveRegion(atomIdx){
+      if (!regionEditMode) return;
+      if (!parent) return;
+      if (!activeRegionId) return;
+
+      ensureAtomToRegion();
+
+      const r = regionDefs.find(x => x.id === activeRegionId);
+      if (!r) return;
+      if (atomIdx < 0 || atomIdx >= atomToRegion.length) return;
+
+      const current = atomToRegion[atomIdx];
+      if (current === activeRegionId) {
+        // remove
+        r.atoms.delete(atomIdx);
+        atomToRegion[atomIdx] = null;
+      } else {
+        // remove from previous region (exclusive)
+        if (current) {
+          const pr = regionDefs.find(x => x.id === current);
+          if (pr) pr.atoms.delete(atomIdx);
+        }
+        atomToRegion[atomIdx] = activeRegionId;
+        r.atoms.add(atomIdx);
+      }
+
+      renderRegionChips();
+      renderParentForSelection();
+      scheduleRegionRegroup();
+      setStatus(`Region: ${r.name} (${r.atoms.size} atoms)`);
+    }
+
+    function scheduleRegionRegroup(){
+      // Debounce regrouping while user clicks many atoms
+      if (regionUpdateTimer) clearTimeout(regionUpdateTimer);
+      regionUpdateTimer = setTimeout(() => {
+        regionUpdateTimer = null;
+        if (el('groupingMode').value === 'regions') applyGroupingAndRender();
+      }, 60);
+    }
+
+    // ----------------------------
+    // Grouping logic
+    // ----------------------------
+    function effectiveGroupKey(idx){
+      const m = molecules[idx];
+      return m.manualGroup || m.autoGroup || G_MULT;
+    }
+
+    function getGroupOrder(){
+      const mode = el('groupingMode').value;
+
+      if (mode === 'lr3') {
+        return [G_L_LEFT, G_L_MID, G_L_RIGHT, G_MULT, G_NOMCS, G_NOCHG, G_HIDDEN];
+      }
+
+      // Custom regions
+      const order = [];
+      for (const r of regionDefs) order.push('reg:' + r.id);
+      order.push(G_MULT, G_OUT, G_NOMCS, G_NOCHG, G_HIDDEN);
+      return order;
+    }
+
+    function groupTitle(groupKey){
+      if (groupKey.startsWith('reg:')) {
+        const id = groupKey.slice(4);
+        const r = regionDefs.find(x => x.id === id);
+        return r ? r.name : 'Region';
+      }
+      switch(groupKey){
+        case G_L_LEFT: return 'Left changes';
+        case G_L_MID: return 'Middle changes';
+        case G_L_RIGHT: return 'Right changes';
+        case G_MULT: return 'Multiple regions';
+        case G_OUT: return 'Outside regions';
+        case G_NOMCS: return 'Scaffold hop / no MCS';
+        case G_NOCHG: return 'No change (identical)';
+        case G_HIDDEN: return 'Hidden';
+        default: return groupKey;
+      }
+    }
+
+    function groupDotColor(groupKey){
+      if (groupKey.startsWith('reg:')) {
+        const id = groupKey.slice(4);
+        const r = regionDefs.find(x => x.id === id);
+        return r ? r.color : null;
+      }
+      if (groupKey === G_L_LEFT) return '#90caf9';
+      if (groupKey === G_L_MID) return '#a5d6a7';
+      if (groupKey === G_L_RIGHT) return '#ffcc80';
+      return null;
+    }
+
+    function groupHint(groupKey){
+      if (groupKey.startsWith('reg:')) {
+        return 'Changes attach to parent atoms in this region (from MCS attachment sites).';
+      }
+      switch(groupKey){
+        case G_L_LEFT: return 'Changes attach on the left side of the parent depiction.';
+        case G_L_MID: return 'Changes attach around the core / middle of the parent depiction.';
+        case G_L_RIGHT: return 'Changes attach on the right side of the parent depiction.';
+        case G_MULT: return 'Changes appear in multiple regions.';
+        case G_OUT: return 'Attachment sites are not assigned to any region.';
+        case G_NOMCS: return 'MCS too small or not found (likely scaffold hop).';
+        case G_NOCHG: return 'MCS covers the whole molecule.';
+        case G_HIDDEN: return 'Manually hidden.';
+        default: return '';
+      }
+    }
+
+    function classifyAutoGroupLR3(molData){
+      if (!molData.mcs || (molData.mcs.molAtoms || []).length < 4) {
+        if ((molData.mcs && (molData.mcs.molAtoms || []).length) > 0) return G_NOMCS;
+        return G_NOMCS;
+      }
+      if (molData.highlightAtoms.size === 0) return G_NOCHG;
+
+      const parentAtomsSet = molData.parentAttachmentAtoms;
+      if (parentAtomsSet && parentAtomsSet.size > 0) {
+        const xs = [];
+        for (const a of parentAtomsSet) {
+          if (a >= 0 && a < parent.coords.length) xs.push(parent.coords[a].x);
+        }
+        if (xs.length === 0) return G_MULT;
+
+        let L=0,M=0,R=0;
+        for (const x of xs) {
+          if (x < parent.bounds.leftX) L++;
+          else if (x > parent.bounds.rightX) R++;
+          else M++;
+        }
+        const total = L+M+R;
+        const max = Math.max(L,M,R);
+        const second = [L,M,R].sort((a,b)=>b-a)[1];
+        let key = (max === L) ? G_L_LEFT : (max === R) ? G_L_RIGHT : G_L_MID;
+        if (total > 0 && second > 0 && (max / total) < 0.75) key = G_MULT;
+        return key;
+      }
+
+      // Fallback: centroid of unmatched atoms in aligned coords
+      try {
+        const coords = parseMolblockAtomCoords(molData.alignedMolblock);
+        const xs = [];
+        for (const a of molData.highlightAtoms) {
+          if (a >= 0 && a < coords.length) xs.push(coords[a].x);
+        }
+        if (xs.length === 0) return G_MULT;
+        const meanX = xs.reduce((s,v)=>s+v,0) / xs.length;
+        if (meanX < parent.bounds.leftX) return G_L_LEFT;
+        if (meanX > parent.bounds.rightX) return G_L_RIGHT;
+        return G_L_MID;
+      } catch(e) {
+        return G_MULT;
+      }
+    }
+
+    function classifyAutoGroupRegions(molData){
+      if (!molData.mcs || (molData.mcs.molAtoms || []).length < 4) return G_NOMCS;
+      if (molData.highlightAtoms.size === 0) return G_NOCHG;
+
+      ensureAtomToRegion();
+      if (!atomToRegion || atomToRegion.length === 0 || regionDefs.length === 0) {
+        // fallback to L/M/R if regions not defined
+        return classifyAutoGroupLR3(molData);
+      }
+
+      const hits = new Map(); // regionId -> count
+      let totalHits = 0;
+
+      const sites = molData.parentAttachmentAtoms;
+      if (!sites || sites.size === 0) return G_OUT;
+
+      for (const pa of sites) {
+        if (pa < 0 || pa >= atomToRegion.length) continue;
+        const rid = atomToRegion[pa];
+        if (!rid) continue;
+        hits.set(rid, (hits.get(rid) || 0) + 1);
+        totalHits++;
+      }
+
+      if (totalHits === 0) return G_OUT;
+
+      let bestRid = null;
+      let best = -1;
+      let regionsWithHits = 0;
+      for (const [rid, c] of hits.entries()) {
+        if (c > 0) regionsWithHits++;
+        if (c > best) { best = c; bestRid = rid; }
+      }
+
+      if (!bestRid) return G_OUT;
+      const frac = best / Math.max(1, totalHits);
+      if (regionsWithHits > 1 && frac < 0.75) return G_MULT;
+
+      return 'reg:' + bestRid;
+    }
+
+    function recomputeAutoGroups(){
+      const mode = el('groupingMode').value;
+      for (const m of molecules) {
+        m.autoGroup = (mode === 'regions') ? classifyAutoGroupRegions(m) : classifyAutoGroupLR3(m);
+      }
+    }
+
+    // ----------------------------
+    // Main build pipeline
+    // ----------------------------
+    async function buildAll(){
+      try {
+        if (!RDKit) return;
+
+        cleanupAll();
+        renderEmpty();
+
+        setProgress(0.02, 'Reading input…');
+        setStatus('Reading input…');
+
+        const raw = await readInputToRawMols();
+        if (!raw || raw.length === 0) {
+          setProgress(0, 'Idle');
+          return showAlert('No valid molecules found. Provide a file or paste SMILES/ID lines.');
+        }
+
+        // Resolve parent
+        const mode = el('parentMode').value;
+        let parentMol = null;
+        let parentId = 'Parent';
+        let parentSmiles = '';
+
+        if (mode === 'ref') {
+          const smi = el('parentSmiles').value.trim();
+          if (!smi) {
+            setProgress(0, 'Idle');
+            return showAlert('Please provide a parent SMILES (Reference mode).');
+          }
+          parentMol = RDKit.get_mol(smi);
+          if (!parentMol || !parentMol.is_valid()) {
+            if (parentMol) parentMol.delete();
+            setProgress(0, 'Idle');
+            return showAlert('Invalid parent SMILES.');
+          }
+          parentSmiles = smi;
+          parentId = 'Parent';
+        } else {
+          // First molecule in input
+          const first = raw.shift();
+          parentMol = first.mol;
+          parentId = (first.properties && (first.properties['Catalog ID'] || first.properties['_Name'])) || 'Parent';
+          try {
+            parentSmiles = first.smiles || parentMol.get_smiles();
+          } catch(e) {
+            parentSmiles = '';
+          }
+        }
+
+        // Parent 2D depiction
+        setProgress(0.08, 'Depicting parent…');
+        setStatus('Depicting parent…');
+        try { parentMol.set_new_coords(); } catch(e) {}
+        try { parentMol.normalize_depiction(); } catch(e) {}
+        try { parentMol.straighten_depiction(); } catch(e) {}
+
+        const parentMolblock = parentMol.get_molblock();
+        const parentCoords = parseMolblockAtomCoords(parentMolblock);
+        const bb = computeBounds(parentCoords);
+        const width = (bb.maxX - bb.minX) || 1;
+
+        const leftX = bb.minX + width * 0.33;
+        const rightX = bb.minX + width * 0.66;
+
+        const parentFp = getMorganFPBytes(parentMol, 2, 2048);
+
+        parent = {
+          mol: parentMol,
+          molblock: parentMolblock,
+          smiles: parentSmiles,
+          id: parentId,
+          coords: parentCoords,
+          bounds: { ...bb, leftX, rightX },
+          fp: parentFp,
+          screenPos: null
+        };
+
+        // Init regions defaults (for custom mode)
+        initDefaultRegions();
+
+        // Process analogs
+        setProgress(0.12, 'Processing analogs…');
+        setStatus('Processing analogs…');
+
+        molecules = [];
+
+        const total = raw.length;
+
+        for (let i = 0; i < raw.length; i++) {
+          const item = raw[i];
+          const mol = item.mol;
+          if (!mol || !mol.is_valid()) {
+            if (mol) mol.delete();
+            continue;
+          }
+
+          if (i % 20 === 0) {
+            const pct = 0.12 + 0.60 * (i / Math.max(1,total));
+            setProgress(pct, `MCS + align: ${i}/${total}`);
+            setStatus(`Processing ${i}/${total}…`);
+            await yieldToUI();
+          }
+
+          // MCS mapping
+          let mcs;
+          try {
+            mcs = findMCSMapping(parent.mol, mol);
+          } catch(e) {
+            mcs = { parentAtoms: [], molAtoms: [], method: 'error' };
+          }
+
+          // Align to parent
+          try {
+            mol.generate_aligned_coords(parent.mol, JSON.stringify({
+              useCoordGen: false,
+              acceptFailure: true,
+              allowRGroups: false
+            }));
+          } catch(e) {
+            try { mol.set_new_coords(); } catch(e2) {}
+          }
+          try { mol.normalize_depiction(); } catch(e) {}
+          try { mol.straighten_depiction(); } catch(e) {}
+
+          const alignedMolblock = mol.get_molblock();
+
+          // Highlight atoms = not in molAtoms match
+          const numAtoms = mol.get_num_atoms();
+          const matchedSet = new Set(mcs.molAtoms || []);
+          const highlightAtoms = new Set();
+          for (let a = 0; a < numAtoms; a++) {
+            if (!matchedSet.has(a)) highlightAtoms.add(a);
+          }
+
+          // Attachment sites on parent
+          const parentAttachmentAtoms = getParentAttachmentAtoms(parent.mol, mol, mcs);
+
+          // Similarity to parent (ECFP4)
+          const fp = getMorganFPBytes(mol, 2, 2048);
+          const sim = (parent.fp && fp) ? tanimotoUint8(parent.fp, fp) : 0;
+
+          const id = (item.properties && (item.properties['Catalog ID'] || item.properties['_Name'])) || ('Mol_' + (i+1));
+          const smiles = item.smiles || (() => { try { return mol.get_smiles(); } catch(e){ return ''; }})();
+
+          const molData = {
+            mol,
+            id,
+            smiles,
+            properties: item.properties || {},
+            alignedMolblock,
+            originalAlignedMolblock: alignedMolblock,
+            mcs,
+            mcsSize: (mcs.molAtoms || []).length,
+            highlightAtoms,
+            originalHighlightAtoms: new Set(highlightAtoms),
+            parentAttachmentAtoms,
+            sim,
+            hidden: false,
+            rotation: 0,
+            mirrorH: false,
+            mirrorV: false,
+            manualGroup: null,
+            autoGroup: null
+          };
+
+          molecules.push(molData);
+        }
+
+        // Sort by similarity (descending)
+        molecules.sort((a,b)=> (b.sim - a.sim));
+
+        // Detect additional data columns / SDF fields for labeling
+        refreshDataFieldUniverse();
+
+
+        setProgress(0.78, 'Rendering…');
+        setStatus('Rendering…');
+
+        // Enable filter button
+        el('rebuildGroupsBtn').disabled = false;
+
+        // Show SAR view
+        el('sarView').style.display = 'block';
+        el('parentId').textContent = parent.id;
+        el('parentSmilesLabel').textContent = parent.smiles || '';
+        el('parentStats').textContent = `${molecules.length} analogs`;
+
+        applyGroupingAndRender();
+
+        setProgress(1.0, 'Done');
+        setTimeout(()=> setProgress(0, 'Idle'), 900);
+        setStatus(`Done. Built view for ${molecules.length} analogs.`);
+      } catch (err) {
+        console.error(err);
+        setProgress(0, 'Idle');
+        setStatus('Error: ' + (err && err.message ? err.message : String(err)));
+        showAlert('Build failed: ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    function yieldToUI(){
+      return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    // ----------------------------
+    // Grouping + filtering + rendering
+    // ----------------------------
+    function applyGroupingAndRender(){
+      if (!parent || molecules.length === 0) {
+        renderEmpty();
+        return;
+      }
+
+      // Ensure regions exist if custom mode selected
+      if (el('groupingMode').value === 'regions' && regionDefs.length === 0) initDefaultRegions();
+
+      recomputeAutoGroups();
+
+      const simMin = Number(el('simMin').value);
+
+      const order = getGroupOrder();
+      groups = {};
+      for (const k of order) groups[k] = [];
+
+      for (let i = 0; i < molecules.length; i++) {
+        const m = molecules[i];
+
+        if (m.hidden) { groups[G_HIDDEN].push(i); continue; }
+        if (m.sim < simMin) continue;
+
+        // Validate manualGroup (may refer to deleted region)
+        if (m.manualGroup && m.manualGroup.startsWith('reg:')) {
+          const rid = m.manualGroup.slice(4);
+          if (!regionDefs.find(r => r.id === rid)) m.manualGroup = null;
+        }
+
+        let g = effectiveGroupKey(i);
+
+        // Apply swap L/R in displayed grouping (lr3 only)
+        if (el('groupingMode').value === 'lr3' && swapLR) {
+          if (g === G_L_LEFT) g = G_L_RIGHT;
+          else if (g === G_L_RIGHT) g = G_L_LEFT;
+        }
+
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(i);
+      }
+
+      renderParentForSelection();
+      renderTrays();
+      refreshSelectedThumbHighlight();
+    }
+
+    function updateThumbWidths(){
+      const w = Number(el('thumbSize').value);
+      document.querySelectorAll('.thumbCard').forEach(card => { card.style.width = w + 'px'; });
+    }
+
+
+    // ----------------------------
+    // Analog labels (thumbnail footer modes)
+    // ----------------------------
+    function getAnalogLabelMode(){
+      const sel = el('analogLabelMode');
+      return sel ? (sel.value || 'label_sims') : 'label_sims';
+    }
+
+
+    function isDataKeyAllowed(key){
+      if (key === null || key === undefined) return false;
+      const kk = String(key).trim();
+      if (!kk) return false;
+      if (kk === 'Catalog ID' || kk === '_Name') return false;
+      const low = kk.toLowerCase();
+      if (low === 'smiles' || low === 'smi') return false;
+      return true;
+    }
+
+    function computeAvailableDataKeysFromMolecules(){
+      const order = [];
+      const hasValue = new Map(); // key -> boolean
+      for (const m of molecules) {
+        const props = m && m.properties ? m.properties : null;
+        if (!props) continue;
+        for (const k of Object.keys(props)) {
+          if (!isDataKeyAllowed(k)) continue;
+          if (!hasValue.has(k)) { hasValue.set(k, false); order.push(k); }
+          const v = props[k];
+          if (v !== null && v !== undefined && String(v).trim() !== '') hasValue.set(k, true);
+        }
+      }
+      return order.filter(k => hasValue.get(k));
+    }
+
+    function refreshDataFieldUniverse(){
+      availableDataKeys = computeAvailableDataKeysFromMolecules();
+
+      const availSet = new Set(availableDataKeys);
+      selectedDataKeys = (selectedDataKeys || []).filter(k => availSet.has(k));
+
+      // Default selection: first up to 3 fields (keeps the layout compact but useful)
+      if (selectedDataKeys.length === 0 && availableDataKeys.length > 0) {
+        selectedDataKeys = availableDataKeys.slice(0, Math.min(3, availableDataKeys.length));
+      }
+
+      updateDataFieldsSummary();
+    }
+
+    function getSelectedDataKeys(){
+      const availSet = new Set(availableDataKeys || []);
+      return (selectedDataKeys || []).filter(k => availSet.has(k));
+    }
+
+    function getPropString(m, key){
+      const props = m && m.properties ? m.properties : null;
+      if (!props) return '';
+      const v = props[key];
+      if (v === null || v === undefined) return '';
+      return String(v).trim();
+    }
+
+    function getSelectedDataLines(m){
+      const keys = getSelectedDataKeys();
+      const lines = [];
+      for (const k of keys) {
+        const v = getPropString(m, k);
+        const missing = !(v && v.trim());
+        const text = missing ? `${k}: —` : `${k}: ${v}`;
+        lines.push({ key: k, value: v, missing, text });
+      }
+      return lines;
+    }
+
+    function updateDataFieldsSummary(){
+      const btn = el('dataFieldsBtn');
+      const sum = el('dataFieldsSummary');
+      const avail = availableDataKeys || [];
+      const sel = getSelectedDataKeys();
+
+      if (btn) btn.disabled = (avail.length === 0);
+
+      if (!sum) return;
+
+      if (avail.length === 0) {
+        sum.textContent = 'No fields';
+        sum.title = 'No additional columns/properties detected in the input.';
+      } else if (sel.length === 0) {
+        sum.textContent = 'None selected';
+        sum.title = 'No additional fields selected.';
+      } else {
+        const preview = sel.slice(0, 3).join(', ') + (sel.length > 3 ? ' …' : '');
+        sum.textContent = preview;
+        sum.title = sel.join(', ');
+      }
+    }
+
+    // --- Field selector modal ---
+    function openFieldSelector(){
+      if (!availableDataKeys || availableDataKeys.length === 0) {
+        return showAlert('No additional data fields were detected in the input.');
+      }
+      fieldModalSelected = new Set(getSelectedDataKeys());
+      if (el('fieldSearchInput')) el('fieldSearchInput').value = '';
+      renderFieldCheckboxList();
+      el('fieldsModal').style.display = 'flex';
+      setTimeout(()=>{ try { el('fieldSearchInput').focus(); } catch(e) {} }, 0);
+    }
+
+    function closeFieldSelector(){
+      if (el('fieldsModal')) el('fieldsModal').style.display = 'none';
+      fieldModalSelected = null;
+    }
+
+    function renderFieldCheckboxList(){
+      const list = el('fieldCheckboxList');
+      const search = el('fieldSearchInput');
+      const q = (search && search.value) ? search.value.trim().toLowerCase() : '';
+      if (!list) return;
+
+      const selSet = fieldModalSelected ? fieldModalSelected : new Set(getSelectedDataKeys());
+      list.innerHTML = '';
+
+      const keys = availableDataKeys || [];
+      let shown = 0;
+
+      for (const k of keys) {
+        if (q && !String(k).toLowerCase().includes(q)) continue;
+        shown++;
+
+        const row = document.createElement('label');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '10px';
+        row.style.padding = '6px 0';
+        row.style.cursor = 'pointer';
+        row.style.fontSize = '13px';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = k;
+        cb.checked = selSet.has(k);
+        cb.style.transform = 'translateY(1px)';
+
+        cb.addEventListener('change', () => {
+          if (!fieldModalSelected) fieldModalSelected = new Set(selSet);
+          if (cb.checked) fieldModalSelected.add(k);
+          else fieldModalSelected.delete(k);
+          updateFieldSelectedCount();
+        });
+
+        const name = document.createElement('div');
+        name.textContent = k;
+
+        row.appendChild(cb);
+        row.appendChild(name);
+        list.appendChild(row);
+      }
+
+      if (shown === 0) {
+        const empty = document.createElement('div');
+        empty.style.color = 'var(--muted)';
+        empty.style.fontSize = '13px';
+        empty.style.padding = '10px 0';
+        empty.textContent = 'No fields match your search.';
+        list.appendChild(empty);
+      }
+
+      updateFieldSelectedCount();
+    }
+
+    function updateFieldSelectedCount(){
+      const badge = el('fieldSelectedCount');
+      if (!badge) return;
+      const sel = fieldModalSelected ? fieldModalSelected : new Set(getSelectedDataKeys());
+      badge.textContent = `${sel.size} selected`;
+    }
+
+    function fieldSelectAll(){
+      if (!availableDataKeys) return;
+      fieldModalSelected = new Set(availableDataKeys);
+      renderFieldCheckboxList();
+    }
+
+    function fieldSelectNone(){
+      fieldModalSelected = new Set();
+      renderFieldCheckboxList();
+    }
+
+    function fieldInvert(){
+      const current = fieldModalSelected ? fieldModalSelected : new Set(getSelectedDataKeys());
+      const next = new Set();
+      for (const k of (availableDataKeys || [])) {
+        if (!current.has(k)) next.add(k);
+      }
+      fieldModalSelected = next;
+      renderFieldCheckboxList();
+    }
+
+    function applyFieldSelection(){
+      const sel = fieldModalSelected ? fieldModalSelected : new Set(getSelectedDataKeys());
+      const out = [];
+      for (const k of (availableDataKeys || [])) {
+        if (sel.has(k)) out.push(k);
+      }
+      selectedDataKeys = out;
+      closeFieldSelector();
+      updateDataFieldsSummary();
+      renderTrays();
+    }
+
+    function renderTrays(){
+      const trays = el('trays');
+      trays.innerHTML = '';
+
+      if (!parent) return;
+
+      const thumbW = Number(el('thumbSize').value);
+      const order = getGroupOrder();
+      const mode = el('groupingMode').value;
+
+      for (const gkey of order) {
+        const arr = groups[gkey] || [];
+        if (gkey === G_HIDDEN && arr.length === 0) continue;
+
+        // In custom mode, hide "Outside regions" when there are no regions defined
+        if (mode === 'regions' && gkey === G_OUT && regionDefs.length === 0) continue;
+
+        const tray = document.createElement('div');
+        tray.className = 'tray';
+
+        const header = document.createElement('div');
+        header.className = 'trayHeader';
+
+        const name = document.createElement('div');
+        name.className = 'name';
+
+        const dotColor = groupDotColor(gkey);
+        if (dotColor) {
+          const dot = document.createElement('div');
+          dot.className = 'dot';
+          dot.style.background = dotColor;
+          name.appendChild(dot);
+        }
+        const nameText = document.createElement('div');
+        nameText.textContent = groupTitle(gkey);
+        name.appendChild(nameText);
+
+        const count = document.createElement('div');
+        count.className = 'count';
+        count.textContent = `${arr.length}`;
+
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = groupHint(gkey);
+
+        header.appendChild(name);
+        header.appendChild(count);
+        header.appendChild(hint);
+
+        const row = document.createElement('div');
+        row.className = 'thumbRow';
+        row.dataset.group = gkey;
+
+        // Drag-and-drop target (works even when empty)
+        row.addEventListener('dragover', (ev) => {
+          ev.preventDefault();
+          row.classList.add('dropTarget');
+        });
+        row.addEventListener('dragleave', () => row.classList.remove('dropTarget'));
+        row.addEventListener('drop', (ev) => {
+          ev.preventDefault();
+          row.classList.remove('dropTarget');
+          const idx = parseInt(ev.dataTransfer.getData('text/plain'));
+          if (!Number.isFinite(idx) || idx < 0 || idx >= molecules.length) return;
+
+          let target = gkey;
+
+          // If swap L/R is active, map the visible tray back to underlying groups
+          if (el('groupingMode').value === 'lr3' && swapLR) {
+            if (target === G_L_LEFT) target = G_L_RIGHT;
+            else if (target === G_L_RIGHT) target = G_L_LEFT;
+          }
+
+          if (target === G_HIDDEN) {
+            molecules[idx].hidden = true;
+            molecules[idx].manualGroup = null;
+          } else {
+            molecules[idx].hidden = false;
+            molecules[idx].manualGroup = target; // manual override
+          }
+
+          applyGroupingAndRender();
+        });
+
+        // Fill cards
+        if (arr.length === 0) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'emptyDrop';
+          placeholder.style.minWidth = Math.max(200, thumbW) + 'px';
+          placeholder.textContent = 'Drop here';
+          row.appendChild(placeholder);
+        } else {
+          for (const idx of arr) {
+            const m = molecules[idx];
+            const card = document.createElement('div');
+            card.className = 'thumbCard' + (idx === selectedIdx ? ' selected' : '');
+            card.style.width = thumbW + 'px';
+            card.draggable = true;
+            card.dataset.idx = idx;
+
+            card.addEventListener('dragstart', (ev) => {
+              card.classList.add('dragging');
+              ev.dataTransfer.setData('text/plain', String(idx));
+              ev.dataTransfer.effectAllowed = 'move';
+            });
+            card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+            card.addEventListener('click', () => { selectMolecule(idx); });
+
+            const svgDiv = document.createElement('div');
+            svgDiv.className = 'thumbSvg';
+            svgDiv.innerHTML = renderMolSvg(m, 200);
+
+            const footer = document.createElement('div');
+            footer.className = 'thumbFooter';
+
+            const idDiv = document.createElement('div');
+            idDiv.className = 'id';
+            idDiv.textContent = m.id;
+            idDiv.title = m.id;
+
+            footer.appendChild(idDiv);
+
+
+            const labelMode = getAnalogLabelMode();
+
+            const showSims = (labelMode === 'label_sims' || labelMode === 'label_sims_data');
+            const wantsData = (labelMode === 'label_data' || labelMode === 'label_sims_data');
+
+            const dataKeys = getSelectedDataKeys();
+            const canShowData = wantsData && (availableDataKeys && availableDataKeys.length > 0) && dataKeys.length > 0;
+
+            if (showSims) {
+              const meta = document.createElement('div');
+              meta.className = 'meta';
+
+              const simBadge = document.createElement('span');
+              simBadge.className = 'badge sim';
+              simBadge.textContent = 'Sim ' + m.sim.toFixed(2);
+
+              const mcsBadge = document.createElement('span');
+              mcsBadge.className = 'badge mcs';
+              mcsBadge.textContent = 'MCS ' + m.mcsSize;
+
+              meta.appendChild(simBadge);
+              meta.appendChild(mcsBadge);
+              footer.appendChild(meta);
+            }
+
+            if (canShowData) {
+              const lines = getSelectedDataLines(m);
+              if (lines && lines.length > 0) {
+                const wrap = document.createElement('div');
+                wrap.className = 'extraWrap';
+                for (const line of lines) {
+                  const rowDiv = document.createElement('div');
+                  rowDiv.className = 'extraRow' + (line.missing ? ' missing' : '');
+                  rowDiv.textContent = line.text;
+                  rowDiv.title = line.missing ? `${line.key}: (missing)` : `${line.key}: ${line.value}`;
+                  wrap.appendChild(rowDiv);
+                }
+                footer.appendChild(wrap);
+              }
+            }
+
+            const dragHint = document.createElement('div');
+            dragHint.className = 'dragHint';
+            dragHint.textContent = 'Drag';
+
+            card.appendChild(svgDiv);
+            card.appendChild(footer);
+            card.appendChild(dragHint);
+            row.appendChild(card);
+          }
+        }
+
+        tray.appendChild(header);
+        tray.appendChild(row);
+        trays.appendChild(tray);
+      }
+
+      updateThumbWidths();
+    }
+
+    function refreshSelectedThumbHighlight(){
+      document.querySelectorAll('.thumbCard').forEach(card => {
+        const idx = parseInt(card.dataset.idx);
+        if (!Number.isFinite(idx)) return;
+        card.classList.toggle('selected', idx === selectedIdx);
+      });
+    }
+
+    // ----------------------------
+    // Parent rendering with regions + attachment sites
+    // ----------------------------
+    function renderParentForSelection(){
+      if (!parent) return;
+
+      const container = el('parentSvg');
+      container.classList.toggle('editing', regionEditMode);
+
+      // Base parent SVG
+      container.innerHTML = renderParentBaseSvg();
+
+      // Optional split lines (lr3 only)
+      if (el('groupingMode').value === 'lr3') {
+        const splitL = document.createElement('div');
+        splitL.className = 'splitLine';
+        splitL.style.left = '33%';
+        const splitR = document.createElement('div');
+        splitR.className = 'splitLine';
+        splitR.style.left = '66%';
+        container.appendChild(splitL);
+        container.appendChild(splitR);
+      }
+
+      // Decorate SVG with region overlays, site rings, and edit targets
+      const svgEl = container.querySelector('svg');
+      if (!svgEl) return;
+
+      // Compute / cache parent atom screen positions for this size
+      const w = PARENT_SVG_W, h = PARENT_SVG_H;
+      if (!parent.screenPos || parent.screenPos.w !== w || parent.screenPos.h !== h) {
+        parent.screenPos = { w, h, pos: getAtomScreenPositionsFromMolblock(parent.molblock, w, h) };
+      }
+      const pos = parent.screenPos.pos || [];
+
+      // Region overlays (custom mode)
+      if (el('groupingMode').value === 'regions' && regionDefs.length > 0) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const g = document.createElementNS(ns, 'g');
+        g.setAttribute('id', 'regionOverlays');
+        g.setAttribute('pointer-events', 'none');
+
+        for (const r of regionDefs) {
+          const fill = r.color || '#ffcc80';
+          for (const a of r.atoms) {
+            const p = pos[a];
+            if (!p) continue;
+            const c = document.createElementNS(ns, 'circle');
+            c.setAttribute('cx', p.x);
+            c.setAttribute('cy', p.y);
+            c.setAttribute('r', '18');
+            c.setAttribute('fill', fill);
+            c.setAttribute('fill-opacity', String(REGION_OPACITY));
+            c.setAttribute('stroke', 'rgba(17,24,39,0.10)');
+            c.setAttribute('stroke-width', '1');
+            g.appendChild(c);
+          }
+        }
+
+        // Insert overlays above the background rect (so they are visible) but below bonds/text.
+        insertOverlayAfterBackgroundRect(svgEl, g);
+      }
+
+      // Attachment site rings (for selected analog)
+      if (selectedIdx >= 0 && molecules[selectedIdx] && molecules[selectedIdx].parentAttachmentAtoms) {
+        const sites = molecules[selectedIdx].parentAttachmentAtoms;
+        if (sites && sites.size) {
+          const ns = 'http://www.w3.org/2000/svg';
+          const g2 = document.createElementNS(ns, 'g');
+          g2.setAttribute('id', 'siteRings');
+          g2.setAttribute('pointer-events', 'none');
+
+          const stroke = `rgba(${Math.round(PARENT_SITE_COLOR[0]*255)},${Math.round(PARENT_SITE_COLOR[1]*255)},${Math.round(PARENT_SITE_COLOR[2]*255)},0.95)`;
+
+          for (const a of sites) {
+            const p = pos[a];
+            if (!p) continue;
+            const c = document.createElementNS(ns, 'circle');
+            c.setAttribute('cx', p.x);
+            c.setAttribute('cy', p.y);
+            c.setAttribute('r', '20');
+            c.setAttribute('fill', 'none');
+            c.setAttribute('stroke', stroke);
+            c.setAttribute('stroke-width', '4');
+            g2.appendChild(c);
+          }
+
+          svgEl.appendChild(g2);
+        }
+      }
+
+      // Region edit targets
+      if (regionEditMode) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const gT = document.createElementNS(ns, 'g');
+        gT.setAttribute('id', 'regionTargets');
+
+        for (let a = 0; a < pos.length; a++) {
+          const p = pos[a];
+          if (!p) continue;
+
+          const circle = document.createElementNS(ns, 'circle');
+          circle.setAttribute('cx', p.x);
+          circle.setAttribute('cy', p.y);
+          circle.setAttribute('r', '18');
+          circle.setAttribute('fill', 'rgba(0,0,0,0.001)');
+          circle.setAttribute('pointer-events', 'all');
+          circle.setAttribute('data-atom', a);
+          circle.style.cursor = 'crosshair';
+
+          circle.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleParentAtomInActiveRegion(a);
+          });
+
+          gT.appendChild(circle);
+        }
+
+        svgEl.appendChild(gT);
+      }
+    }
+
+    // ----------------------------
+    // Selection and editor
+    // ----------------------------
+    function selectMolecule(idx){
+      selectedIdx = idx;
+      refreshSelectedThumbHighlight();
+      openDrawer();
+      renderSelectedInEditor();
+      renderParentForSelection();
+
+      const m = molecules[idx];
+
+      // Subtitle includes effective group (manual vs auto)
+      const eff = effectiveGroupKey(idx);
+      const effTitle = groupTitle(eff);
+      const isManual = !!m.manualGroup;
+
+      el('selTitle').textContent = m.id;
+      el('selSubtitle').textContent = `${effTitle}${isManual ? ' (manual)' : ''} • Sim ${m.sim.toFixed(2)} • MCS ${m.mcsSize}`;
+      setStatus(`Selected: ${m.id}`);
+    }
+
+    function renderSelectedInEditor(){
+      const svgBox = el('editorSvg');
+      if (selectedIdx < 0 || !molecules[selectedIdx]) {
+        svgBox.innerHTML = '<div style="color:var(--muted); font-size:13px; padding:18px; text-align:center;">Select an analog to view it here.</div>';
+        return;
+      }
+      const m = molecules[selectedIdx];
+      svgBox.innerHTML = renderMolSvg(m, SVG_EDITOR);
+      addAtomTargetsToEditor(selectedIdx);
+    }
+
+    function updateSelectedRenders(refreshThumb=true){
+      renderSelectedInEditor();
+      if (refreshThumb) {
+        const card = document.querySelector(`.thumbCard[data-idx="${selectedIdx}"] .thumbSvg`);
+        if (card && molecules[selectedIdx]) {
+          card.innerHTML = renderMolSvg(molecules[selectedIdx], 200);
+        }
+      }
+    }
+
+    function toggleDrawer(){
+      const drawer = el('drawer');
+      if (drawer.classList.contains('open')) closeDrawer();
+      else openDrawer();
+    }
+
+    function openDrawer(){
+      el('drawer').classList.add('open');
+      el('toggleDrawerBtn').textContent = 'Editor ✓';
+    }
+
+    function closeDrawer(){
+      el('drawer').classList.remove('open');
+      el('toggleDrawerBtn').textContent = 'Editor';
+    }
+
+    // ----------------------------
+    // Atom click targets for editor
+    // ----------------------------
+    function addAtomTargetsToEditor(molIdx) {
+      const molData = molecules[molIdx];
+      const svgContainer = el('editorSvg');
+      const svgEl = svgContainer.querySelector('svg');
+      if (!svgEl) return;
+
+      const positions = getAtomScreenPositions(molData, SVG_EDITOR);
+      if (!positions || positions.length === 0) return;
+
+      const ns = 'http://www.w3.org/2000/svg';
+      for (let a = 0; a < positions.length; a++) {
+        const p = positions[a];
+        if (!p) continue;
+
+        const circle = document.createElementNS(ns, 'circle');
+        circle.setAttribute('cx', p.x);
+        circle.setAttribute('cy', p.y);
+        circle.setAttribute('r', '16');
+        circle.setAttribute('fill', 'rgba(0,0,0,0.001)');
+        circle.setAttribute('pointer-events', 'all');
+        circle.setAttribute('data-atom', a);
+        circle.style.cursor = structEditMode ? 'grab' : (editMode ? 'crosshair' : 'default');
+
+        circle.addEventListener('click', (e) => {
+          if (!editMode) return;
+          e.stopPropagation();
+          toggleAtomHighlight(molIdx, a);
+        });
+
+        circle.addEventListener('pointerdown', (e) => {
+          if (!structEditMode) return;
+          e.stopPropagation();
+          e.preventDefault();
+          startAtomDrag(e, molIdx, a);
+        });
+
+        svgEl.appendChild(circle);
+      }
+    }
+
+    function toggleAtomHighlight(molIdx, atomIdx) {
+      const molData = molecules[molIdx];
+      if (molData.highlightAtoms.has(atomIdx)) molData.highlightAtoms.delete(atomIdx);
+      else molData.highlightAtoms.add(atomIdx);
+      updateSelectedRenders();
+      setStatus(`Toggled atom ${atomIdx} highlight.`);
+    }
+
+    // ----------------------------
+    // Atom dragging (structure edit)
+    // ----------------------------
+    function deriveTransform(molCoords, screenCoords) {
+      let bestDist = 0, bestI = -1, bestJ = -1;
+      for (let i = 0; i < molCoords.length; i++) {
+        if (!screenCoords[i]) continue;
+        for (let j = i + 1; j < molCoords.length; j++) {
+          if (!screenCoords[j]) continue;
+          const dx = molCoords[i].x - molCoords[j].x;
+          const dy = molCoords[i].y - molCoords[j].y;
+          const dist = dx*dx + dy*dy;
+          if (dist > bestDist) { bestDist = dist; bestI = i; bestJ = j; }
+        }
+      }
+      if (bestI < 0 || bestDist < 1e-6) {
+        return { scale: 1, tx: SVG_EDITOR/2, ty: SVG_EDITOR/2 };
+      }
+      const dMolX = molCoords[bestI].x - molCoords[bestJ].x;
+      const dScreenX = screenCoords[bestI].x - screenCoords[bestJ].x;
+      const dMolY = molCoords[bestI].y - molCoords[bestJ].y;
+      const dScreenY = screenCoords[bestI].y - screenCoords[bestJ].y;
+      let scale;
+      if (Math.abs(dMolX) > 1e-6) scale = dScreenX / dMolX;
+      else scale = -dScreenY / dMolY;
+      const tx = screenCoords[bestI].x - molCoords[bestI].x * scale;
+      const ty = screenCoords[bestI].y + molCoords[bestI].y * scale;
+      return { scale, tx, ty };
+    }
+
+    function screenToMolCoords(sx, sy, transform) {
+      const { scale, tx, ty } = transform;
+      return { x: (sx - tx) / scale, y: -(sy - ty) / scale };
+    }
+
+    function updateMolblockAtomCoord(molblock, atomIdx, newX, newY) {
+      const lines = molblock.split(/\r\n|\n|\r/);
+      let countsLineIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { countsLineIdx = i; break; }
+      }
+      if (countsLineIdx < 0) return molblock;
+      const lineIdx = countsLineIdx + 1 + atomIdx;
+      if (lineIdx >= lines.length) return molblock;
+      const line = lines[lineIdx] || '';
+      const rest = line.substring(20);
+      lines[lineIdx] = newX.toFixed(4).padStart(10) + newY.toFixed(4).padStart(10) + rest;
+      return lines.join('\n');
+    }
+
+    function startAtomDrag(e, molIdx, atomIdx) {
+      const molData = molecules[molIdx];
+      const svgContainer = el('editorSvg');
+      const svgEl = svgContainer.querySelector('svg');
+      if (!svgEl) return;
+
+      const circle = e.target;
+      if (circle && circle.setPointerCapture) {
+        try { circle.setPointerCapture(e.pointerId); } catch(ex) {}
+      }
+      if (circle) {
+        circle.setAttribute('fill', 'rgba(21, 101, 192, 0.28)');
+        circle.setAttribute('r', '20');
+        circle.style.cursor = 'grabbing';
+      }
+
+      const rect = svgEl.getBoundingClientRect();
+
+      const tMolblock = transformMolblock(molData.alignedMolblock, molData.rotation, molData.mirrorH, molData.mirrorV);
+      const molCoords = parseMolblockAtomCoords(tMolblock);
+      const screenCoords = getAtomScreenPositions(molData, SVG_EDITOR);
+      const transform = deriveTransform(molCoords, screenCoords);
+
+      dragState = { molIdx, atomIdx, rect, tMolblock, transform, molData, circle };
+
+      const onMove = (ev) => {
+        if (!dragState) return;
+        if (!dragState.circle) return;
+        const svgX = (ev.clientX - dragState.rect.left) / dragState.rect.width * SVG_EDITOR;
+        const svgY = (ev.clientY - dragState.rect.top) / dragState.rect.height * SVG_EDITOR;
+        dragState.circle.setAttribute('cx', svgX);
+        dragState.circle.setAttribute('cy', svgY);
+      };
+
+      const onUp = (ev) => {
+        if (!dragState) return;
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+
+        const svgX = (ev.clientX - dragState.rect.left) / dragState.rect.width * SVG_EDITOR;
+        const svgY = (ev.clientY - dragState.rect.top) / dragState.rect.height * SVG_EDITOR;
+        const newCoords = screenToMolCoords(svgX, svgY, dragState.transform);
+
+        const newMolblock = updateMolblockAtomCoord(dragState.tMolblock, dragState.atomIdx, newCoords.x, newCoords.y);
+
+        // Bake the transform by replacing alignedMolblock and resetting view transforms
+        dragState.molData.alignedMolblock = newMolblock;
+        dragState.molData.rotation = 0;
+        dragState.molData.mirrorH = false;
+        dragState.molData.mirrorV = false;
+
+        // Recreate RDKit mol
+        try { dragState.molData.mol.delete(); } catch(ex) {}
+        dragState.molData.mol = RDKit.get_mol(newMolblock);
+
+        dragState = null;
+        updateSelectedRenders(true);
+        setStatus(`Moved atom ${atomIdx}.`);
+      };
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    }
+
+    // ----------------------------
+    // Editor actions
+    // ----------------------------
+    function toggleEditHighlights(){
+      editMode = !editMode;
+      if (editMode && structEditMode) {
+        structEditMode = false;
+        el('editStructureBtn').classList.remove('active');
+      }
+      el('editHighlightsBtn').classList.toggle('active', editMode);
+      setStatus(editMode ? 'Edit highlights: ON (click atoms)' : 'Edit highlights: OFF');
+      renderSelectedInEditor();
+    }
+
+    function toggleStructEdit(){
+      structEditMode = !structEditMode;
+      if (structEditMode && editMode) {
+        editMode = false;
+        el('editHighlightsBtn').classList.remove('active');
+      }
+      el('editStructureBtn').classList.toggle('active', structEditMode);
+      setStatus(structEditMode ? 'Edit structure: ON (drag atoms)' : 'Edit structure: OFF');
+      renderSelectedInEditor();
+    }
+
+    function rotateSelected(deg){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      m.rotation = (m.rotation + deg + 360) % 360;
+      updateSelectedRenders(true);
+      setStatus(`Rotated ${m.id}`);
+    }
+
+    function mirrorSelected(dir){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      if (dir === 'h') m.mirrorH = !m.mirrorH;
+      else m.mirrorV = !m.mirrorV;
+      updateSelectedRenders(true);
+      setStatus(`Mirrored ${m.id}`);
+    }
+
+    function resetSelectedView(){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      m.rotation = 0;
+      m.mirrorH = false;
+      m.mirrorV = false;
+      updateSelectedRenders(true);
+      setStatus(`Reset view: ${m.id}`);
+    }
+
+    function revertSelectedStructure(){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      m.alignedMolblock = m.originalAlignedMolblock;
+      m.rotation = 0;
+      m.mirrorH = false;
+      m.mirrorV = false;
+      try { m.mol.delete(); } catch(ex) {}
+      m.mol = RDKit.get_mol(m.originalAlignedMolblock);
+      updateSelectedRenders(true);
+      setStatus(`Reverted structure: ${m.id}`);
+    }
+
+    // ----------------------------
+    // Atom selector modal
+    // ----------------------------
+    function parseAtomSymbols(molblock) {
+      const lines = molblock.split(/\r\n|\n|\r/);
+      let countsLineIdx = -1;
+      for (let i = 0; i < Math.min(lines.length, 10); i++) {
+        if (lines[i].includes('V2000') || lines[i].includes('V3000')) { countsLineIdx = i; break; }
+      }
+      if (countsLineIdx < 0) return [];
+      const numAtoms = parseInt(lines[countsLineIdx].substring(0, 3).trim());
+      if (!Number.isFinite(numAtoms) || numAtoms <= 0) return [];
+      const symbols = [];
+      const atomStartIdx = countsLineIdx + 1;
+      for (let i = atomStartIdx; i < atomStartIdx + numAtoms && i < lines.length; i++) {
+        const line = lines[i] || '';
+        symbols.push(line.length > 33 ? line.substring(31, 34).trim() : '?');
+      }
+      return symbols;
+    }
+
+    function openAtomSelector(){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      const list = el('atomCheckboxList');
+      list.innerHTML = '';
+
+      const numAtoms = m.mol.get_num_atoms();
+      const symbols = parseAtomSymbols(m.alignedMolblock);
+
+      for (let i = 0; i < numAtoms; i++) {
+        const row = document.createElement('label');
+        row.style.display = 'block';
+        row.style.padding = '6px 0';
+        row.style.cursor = 'pointer';
+        row.style.fontSize = '13px';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = i;
+        cb.checked = m.highlightAtoms.has(i);
+        cb.style.marginRight = '10px';
+
+        row.appendChild(cb);
+        row.appendChild(document.createTextNode(`Atom ${i}: ${symbols[i] || '?'}`));
+        list.appendChild(row);
+      }
+
+      el('atomModal').style.display = 'flex';
+    }
+
+    function closeAtomSelector(){ el('atomModal').style.display = 'none'; }
+
+    function atomSelectAll(){ document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = true); }
+    function atomSelectNone(){ document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = false); }
+    function atomInvert(){ document.querySelectorAll('#atomCheckboxList input').forEach(cb => cb.checked = !cb.checked); }
+
+    function applyAtomSelection(){
+      if (selectedIdx < 0) return;
+      const m = molecules[selectedIdx];
+      m.highlightAtoms.clear();
+      document.querySelectorAll('#atomCheckboxList input:checked').forEach(cb => m.highlightAtoms.add(parseInt(cb.value)));
+      closeAtomSelector();
+      updateSelectedRenders(true);
+      setStatus('Updated highlights from atom list.');
+    }
+
+    // expose for modal onclick handlers
+    window.closeAtomSelector = closeAtomSelector;
+    window.atomSelectAll = atomSelectAll;
+    window.atomSelectNone = atomSelectNone;
+    window.atomInvert = atomInvert;
+    window.applyAtomSelection = applyAtomSelection;
+
+    // expose for data field selector modal onclick handlers
+    window.closeFieldSelector = closeFieldSelector;
+    window.fieldSelectAll = fieldSelectAll;
+    window.fieldSelectNone = fieldSelectNone;
+    window.fieldInvert = fieldInvert;
+    window.applyFieldSelection = applyFieldSelection;
+
+
+    // ----------------------------
+    // Export to high-res PNG
+    // ----------------------------
+    function ensureSvgHasSize(svgStr, width, height){
+      // Ensure xmlns and width/height attributes exist (for rasterization)
+      let s = svgStr.trim();
+      if (!s.startsWith('<svg')) return s;
+      if (!s.includes('xmlns=')) {
+        s = s.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+      }
+      // Force width/height (avoid huge export surprises)
+      s = s.replace(/width=['"][^'"]*['"]/, `width="${width}"`);
+      s = s.replace(/height=['"][^'"]*['"]/, `height="${height}"`);
+      if (!/width=['"][^'"]*['"]/.test(s)) s = s.replace('<svg', `<svg width="${width}"`);
+      if (!/height=['"][^'"]*['"]/.test(s)) s = s.replace('<svg', `<svg height="${height}"`);
+      return s;
+    }
+
+    function svgToImage(svgStr){
+      return new Promise((resolve, reject) => {
+        const svgBlob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      });
+    }
+
+    async function drawSvgToCanvas(ctx, svgStr, x, y, w, h){
+      const fixed = ensureSvgHasSize(svgStr, w, h);
+      const img = await svgToImage(fixed);
+      ctx.drawImage(img, x, y, w, h);
+    }
+
+    function decoratedParentSvgString(width, height){
+      // Base
+      const base = renderMolSvgFromMolblockWH(parent.molblock, width, height, null, HIGHLIGHT_COLOR, highlightRadius);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(base, 'image/svg+xml');
+      const svg = doc.querySelector('svg');
+      if (!svg) return base;
+
+      // Region overlays
+      if (el('groupingMode').value === 'regions' && regionDefs.length > 0) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const pos = getAtomScreenPositionsFromMolblock(parent.molblock, width, height);
+        const g = doc.createElementNS(ns, 'g');
+        g.setAttribute('pointer-events', 'none');
+
+        for (const r of regionDefs) {
+          for (const a of r.atoms) {
+            const p = pos[a];
+            if (!p) continue;
+            const c = doc.createElementNS(ns, 'circle');
+            c.setAttribute('cx', p.x);
+            c.setAttribute('cy', p.y);
+            c.setAttribute('r', '22');
+            c.setAttribute('fill', r.color || '#ffcc80');
+            c.setAttribute('fill-opacity', String(REGION_OPACITY));
+            c.setAttribute('stroke', 'rgba(17,24,39,0.10)');
+            c.setAttribute('stroke-width', '1');
+            g.appendChild(c);
+          }
+        }
+
+        insertOverlayAfterBackgroundRect(svg, g);
+      }
+
+      return new XMLSerializer().serializeToString(doc);
+    }
+
+    async function exportGroupedPNG(){
+      try {
+        if (!parent || molecules.length === 0) return showAlert('Nothing to export.');
+
+        const scale = clamp(parseInt(el('exportScale').value || '3'), 1, 6);
+        const cols = clamp(parseInt(el('exportCols').value || '6'), 2, 12);
+        const labelPx = Number(el('labelFontSelect').value || '12') || 12;
+        const labelMode = getAnalogLabelMode();
+        const showSims = (labelMode === 'label_sims' || labelMode === 'label_sims_data');
+        const wantsData = (labelMode === 'label_data' || labelMode === 'label_sims_data');
+
+        // Use current grouping (visible)
+        const order = getGroupOrder().filter(k => (groups[k] || []).length > 0 || k === G_HIDDEN && (groups[k] || []).length > 0);
+        const thumbBase = Number(el('thumbSize').value) || 170;
+        const thumb = Math.round(thumbBase * scale);
+
+                // Footer sizing depends on the selected label mode + chosen data fields
+        const dataKeys = getSelectedDataKeys();
+        const canShowData = wantsData && (availableDataKeys && availableDataKeys.length > 0) && dataKeys.length > 0;
+
+        let maxLines = 1; // ID line
+        if (showSims) maxLines += 1;
+        if (canShowData) maxLines += dataKeys.length;
+
+        const footerTop = Math.round(24 * scale);
+        const lineStep = Math.round(20 * scale);
+        const footerBottom = Math.round(20 * scale);
+        const footerH = footerTop + (maxLines - 1) * lineStep + footerBottom;
+
+        const cellW = thumb;
+        const cellH = thumb + footerH;
+        const gap = Math.round(18 * scale);
+        const pad = Math.round(36 * scale);
+
+        // Canvas width based on columns
+        const canvasW = pad*2 + cols*cellW + (cols-1)*gap;
+
+        // Estimate height
+        const titleH = Math.round(58 * scale);
+
+        // Parent block sizing: keep the parent comparable to thumbnails (avoid dominating the PNG)
+        const parentH = Math.round(thumb * 1.05);
+        const parentW = Math.min(canvasW - 2*pad, Math.round(parentH * 1.78));
+        const parentBlockH = titleH + parentH + Math.round(18 * scale);
+
+        let totalH = pad + parentBlockH + Math.round(20*scale);
+
+        const groupHeaderH = Math.round(34 * scale);
+        for (const gkey of order) {
+          const arr = groups[gkey] || [];
+          const rows = Math.max(1, Math.ceil(arr.length / cols));
+          totalH += groupHeaderH + rows*cellH + (rows-1)*gap + Math.round(26*scale);
+        }
+        totalH += pad;
+
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasW;
+        canvas.height = totalH;
+        const ctx = canvas.getContext('2d');
+
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasW, totalH);
+
+        // Title (two lines; avoids overlap with long parent IDs)
+        let y = pad;
+        const titleFont = Math.round(22*scale);
+        const subFont = Math.round(14*scale);
+        const lineGap = Math.round(10*scale);
+
+        ctx.fillStyle = '#111827';
+        ctx.font = `bold ${titleFont}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+        ctx.fillText('Analog Explorer', pad, y + titleFont);
+
+        ctx.fillStyle = '#374151';
+        ctx.font = `bold ${subFont}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+        const parentLine = `Parent: ${(parent.id || 'Parent')}`;
+        ctx.fillText(clipText(ctx, parentLine, canvasW - 2*pad), pad, y + titleFont + lineGap + subFont);
+
+        y += titleH;
+
+        const parentX = pad + Math.round(((canvasW - 2*pad) - parentW) / 2);
+        const parentSvg = decoratedParentSvgString(parentW, parentH);
+        await drawSvgToCanvas(ctx, parentSvg, parentX, y, parentW, parentH);
+
+        y += parentH + Math.round(26*scale);
+
+        // Groups
+        for (const gkey of order) {
+          const arr = groups[gkey] || [];
+          if (!arr.length) continue;
+
+          // Header
+          const dot = groupDotColor(gkey);
+          ctx.fillStyle = '#111827';
+          ctx.font = `bold ${Math.round(18*scale)}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+
+          const headerY = y + Math.round(18*scale);
+          if (dot) {
+            ctx.fillStyle = dot;
+            ctx.beginPath();
+            ctx.arc(pad + Math.round(8*scale), headerY - Math.round(6*scale), Math.round(6*scale), 0, Math.PI*2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#111827';
+          ctx.fillText(`${groupTitle(gkey)} (${arr.length})`, pad + (dot ? Math.round(20*scale) : 0), headerY);
+
+          y += groupHeaderH;
+
+          // Cards grid
+          for (let i = 0; i < arr.length; i++) {
+            const idx = arr[i];
+            const m = molecules[idx];
+
+            const r = Math.floor(i / cols);
+            const c = i % cols;
+
+            const x = pad + c*(cellW + gap);
+            const yy = y + r*(cellH + gap);
+
+            // Card background
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = 'rgba(229,231,235,1.0)';
+            ctx.lineWidth = Math.max(1, Math.round(2*scale));
+            ctx.beginPath();
+            const rad = Math.round(12*scale);
+            roundRect(ctx, x, yy, cellW, cellH, rad);
+            ctx.fill();
+            ctx.stroke();
+
+            // Mol svg (square)
+            const svg = renderMolSvg(m, thumb);
+            await drawSvgToCanvas(ctx, svg, x, yy, thumb, thumb);
+
+            // Footer (respects the selected label mode)
+            const idFont = Math.round(labelPx*scale);
+            const smallFont = Math.round(11*scale);
+            let ty = yy + thumb + footerTop;
+
+            ctx.fillStyle = '#111827';
+            ctx.font = `bold ${idFont}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+            ctx.fillText(clipText(ctx, m.id, cellW - Math.round(12*scale)), x + Math.round(6*scale), ty);
+
+            if (showSims) {
+              ty += lineStep;
+              ctx.font = `${smallFont}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+              ctx.fillStyle = '#374151';
+              ctx.fillText(
+                clipText(ctx, `Sim ${m.sim.toFixed(2)} • MCS ${m.mcsSize}`, cellW - Math.round(12*scale)),
+                x + Math.round(6*scale),
+                ty
+              );
+            }
+
+
+            if (canShowData) {
+              const lines = getSelectedDataLines(m);
+              for (const line of lines) {
+                ty += lineStep;
+                ctx.font = `${smallFont}px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial,sans-serif`;
+                ctx.fillStyle = line.missing ? '#d1d5db' : '#6b7280';
+                ctx.fillText(
+                  clipText(ctx, line.text, cellW - Math.round(12*scale)),
+                  x + Math.round(6*scale),
+                  ty
+                );
+              }
+            }
+
+          } // end cards loop
+
+          const rows = Math.ceil(arr.length / cols);
+          y += rows*cellH + (rows-1)*gap + Math.round(26*scale);
+        }
+
+        // Download
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob) return showAlert('Export failed (canvas.toBlob returned null).');
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeParent = (parent.id || 'parent').replace(/[^a-z0-9_-]+/gi,'_').slice(0,60);
+        a.download = `analog_explorer_${safeParent}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        setStatus('Exported PNG.');
+      } catch (e) {
+        console.error(e);
+        showAlert('Export failed: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    function roundRect(ctx, x, y, w, h, r){
+      const rr = Math.min(r, w/2, h/2);
+      ctx.moveTo(x+rr, y);
+      ctx.arcTo(x+w, y, x+w, y+h, rr);
+      ctx.arcTo(x+w, y+h, x, y+h, rr);
+      ctx.arcTo(x, y+h, x, y, rr);
+      ctx.arcTo(x, y, x+w, y, rr);
+      ctx.closePath();
+    }
+
+    function clipText(ctx, text, maxWidth){
+      const s = String(text || '');
+      if (ctx.measureText(s).width <= maxWidth) return s;
+      let t = s;
+      while (t.length > 3 && ctx.measureText(t + '…').width > maxWidth) t = t.slice(0, -1);
+      return t + '…';
+    }
+
+    // ----------------------------
+    // Cleanup / empty
+    // ----------------------------
+    function cleanupAll(){
+      // delete analog mols
+      for (const m of molecules) {
+        if (m && m.mol) {
+          try { m.mol.delete(); } catch(e) {}
+          m.mol = null;
+        }
+      }
+      molecules = [];
+      groups = {};
+      selectedIdx = -1;
+
+      // additional data fields (labels)
+      availableDataKeys = [];
+      selectedDataKeys = [];
+      fieldModalSelected = null;
+      try { if (el('fieldsModal')) el('fieldsModal').style.display = 'none'; } catch(e) {}
+      updateDataFieldsSummary();
+
+      // delete parent mol if it exists
+      if (parent && parent.mol) {
+        try { parent.mol.delete(); } catch(e) {}
+      }
+      parent = null;
+
+      // regions
+      regionDefs = [];
+      activeRegionId = null;
+      atomToRegion = null;
+      regionEditMode = false;
+      el('editRegionsBtn').classList.remove('active');
+
+      // editor modes
+      editMode = false;
+      structEditMode = false;
+      el('editHighlightsBtn').classList.remove('active');
+      el('editStructureBtn').classList.remove('active');
+
+      el('rebuildGroupsBtn').disabled = true;
+
+      setProgress(0, 'Idle');
+      setStatus('Cleared.');
+
+      closeDrawer();
+      renderRegionChips();
+    }
+
+    function renderEmpty(){
+      el('sarView').style.display = 'none';
+      el('trays').innerHTML = '';
+      el('parentSvg').innerHTML = '';
+      el('editorSvg').innerHTML = '<div style="color:var(--muted); font-size:13px; padding:18px; text-align:center;">Select an analog to view it here.</div>';
+      el('selTitle').textContent = 'No selection';
+      el('selSubtitle').textContent = 'Click an analog to inspect / edit.';
+    }
+
+  </script>
+</body>
+</html>
