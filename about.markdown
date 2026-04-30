@@ -190,7 +190,7 @@ Advisor: Alexander B. Rozhenko
 - Admissions Committee, *UCSF Masters Program in AI and Computational Drug Design*, 2024--2025
 - Reviewer, *Journal of Organic Chemistry*, *Chemistry of Heterocyclic Compounds*, *Organic Letters*, *Scientific Reports*, *Journal of Food Biochemistry*, *Drug Discovery Today*, *PLoS ONE*
 - Reviewer, *Ukrainian Fulbright Graduate Student Program*, 2021, 2025
-
+- Presentation Coach & Evaluator, *Research in Progress Seminar, Graduate Program, UCSF*, 2023–2026
 ---
 
 ## Mentoring
