@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MolCanvas — chemical structure editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400&family=Roboto+Mono&family=Noto+Sans:ital,wght@0,400;0,700;1,400&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="./assets/index-u30cveO-.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DOn_0iQZ.css">
+  </head>
+  <body>
+    <div id="app">
+      <header id="topbar">
+        <span class="brand">Mol<span class="brand-accent">Canvas</span></span>
+        <nav id="menubar" aria-label="Menu"></nav>
+      </header>
+      <div id="workspace">
+        <nav id="toolbar" aria-label="Drawing tools">
+          <div class="panel-grip" id="toolbar-grip" title="Drag to move">⋮⋮</div>
+        </nav>
+        <main id="canvas-host">
+          <canvas id="scene"></canvas>
+          <div id="quickbar" aria-label="Quick actions">
+            <div class="panel-grip" id="quickbar-grip" title="Drag to move">⋮⋮</div>
+          </div>
+          <div id="compound-table" class="hidden" aria-label="Compound table editor"></div>
+          <div id="statusbar"></div>
+        </main>
+        <aside id="sidebar" aria-label="Inspector and properties">
+          <div id="templates"></div>
+          <div id="inspector"></div>
+          <div id="props"></div>
+        </aside>
+      </div>
+      <input id="file-input" type="file" accept=".mol,.sdf,.cdxml,.txt,.smi,.smiles,.csv,.tsv" hidden />
+    </div>
+  </body>
+</html>
