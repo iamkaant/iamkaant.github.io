@@ -16,3 +16,36 @@ h5,
 h6 {
   font-weight: 300;
 }
+
+/* Tools listing on the front page */
+.tool-list {
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.tool-item {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8e8e8;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.tool-name {
+  margin-bottom: 4px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.tool-blurb {
+  margin-bottom: 4px;
+  color: #424242;
+}
+
+.tool-item .post-meta {
+  font-size: 14px;
+  color: #828282;
+}

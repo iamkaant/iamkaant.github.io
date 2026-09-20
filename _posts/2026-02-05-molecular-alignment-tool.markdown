@@ -3,6 +3,8 @@ layout: post
 title: "Interactive Molecular Structure Alignment & Highlighting"
 date: 2026-02-05 12:00:00
 categories: chemistry tools
+tool: true
+blurb: "Align structures to a common scaffold and highlight what differs."
 ---
 
 A browser-based tool for aligning molecular structures to a common reference scaffold and highlighting the differences. It runs entirely in your browser using [RDKit.js](https://github.com/rdkit/rdkit-js) (WebAssembly) -- no installation required.

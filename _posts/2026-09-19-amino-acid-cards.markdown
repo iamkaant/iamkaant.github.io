@@ -3,6 +3,8 @@ layout: post
 title: "Amino Acid Cards: Spaced Repetition for the 20 Residues"
 date: 2026-09-19 12:00:00
 categories: chemistry tools learning
+tool: true
+blurb: "Flashcard deck for the 20 residues, with Leitner scheduling and 2D side chains."
 ---
 
 <iframe src="/assets/amino-acid-cards.html"

@@ -1,0 +1,6 @@
+# Tools that live as standalone pages rather than blog posts.
+# These are listed above the post-backed tools on the Tools page.
+- title: "MolCanvas"
+  blurb: "Chemical structure editor that runs in the browser."
+  url: /assets/MolCanvas/
+  date: 2026-08-07

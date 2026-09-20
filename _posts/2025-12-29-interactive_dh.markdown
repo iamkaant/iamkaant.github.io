@@ -3,6 +3,8 @@ layout: post
 title: "Interactive Elliptic Curve Cryptography"
 date: 2025-12-29 19:24:00 
 categories: learning
+tool: true
+blurb: "Interactive walk-through of Diffie-Hellman key exchange on elliptic curves."
 ---
 
 I was always fascinated with the way modern cryptography works. While learning about elliptic curves, I used Anthropic Claude to build an interactive visualization of Diffie-Hellman key exchange. You can explore it below.

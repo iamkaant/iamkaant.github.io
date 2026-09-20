@@ -28,6 +28,12 @@ url: "https://kyrylch.uk" # the base hostname & protocol for your site, e.g. htt
 #twitter_username: jekyllrb
 github_username:  iamkaant
 
+# Navigation order in the site header (minima lists pages that have a title).
+header_pages:
+  - index.markdown
+  - posts.markdown
+  - about.markdown
+
 # Build settings
 theme: minima
 # remote_theme: pages-themes/cayman@v0.2.0 #benbalter/retlab
