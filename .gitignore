@@ -4,3 +4,5 @@ _site
 .jekyll-metadata
 vendor
 Gemfile.lock
+.claude
+_posts/2026-06-29-docking-pxr-ligand-binding-poses.markdown
