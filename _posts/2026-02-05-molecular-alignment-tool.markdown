@@ -5,6 +5,8 @@ date: 2026-02-05 12:00:00
 categories: chemistry tools
 tool: true
 blurb: "Align structures to a common scaffold and highlight what differs."
+short_title: "Molecular Alignment"
+thumb: /assets/images/tools/molecular-alignment.png
 ---
 
 A browser-based tool for aligning molecular structures to a common reference scaffold and highlighting the differences. It runs entirely in your browser using [RDKit.js](https://github.com/rdkit/rdkit-js) (WebAssembly) -- no installation required.

@@ -17,35 +17,69 @@ h6 {
   font-weight: 300;
 }
 
-/* Tools listing on the front page */
-.tool-list {
+/* Tools grid on the front page */
+.tool-grid {
   list-style: none;
-  margin-left: 0;
-  padding-left: 0;
+  margin: 0 0 30px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 24px;
 }
 
-.tool-item {
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e8e8e8;
+.tool-tile {
+  margin: 0;
+  // grid items take their auto minimum from the 800px thumbnail,
+  // which overflows the row on narrow screens without this
+  min-width: 0;
+}
 
-  &:last-child {
-    border-bottom: 0;
+.tool-tile-link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    border-color: #c9c9c9;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   }
 }
 
-.tool-name {
-  margin-bottom: 4px;
+.tool-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  object-position: top center;
+  background: #f4f4f4;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.tool-tile-body {
+  display: block;
+  padding: 14px 16px 16px;
+}
+
+.tool-tile .tool-name {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 18px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
+  color: #111;
 }
 
-.tool-blurb {
-  margin-bottom: 4px;
-  color: #424242;
-}
-
-.tool-item .post-meta {
+.tool-tile .tool-blurb {
+  display: block;
   font-size: 14px;
-  color: #828282;
+  line-height: 1.45;
+  color: #5a5a5a;
 }

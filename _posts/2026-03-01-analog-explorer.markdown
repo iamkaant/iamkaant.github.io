@@ -5,6 +5,8 @@ date: 2026-03-01 12:00:00
 categories: chemistry tools
 tool: true
 blurb: "SAR viewer that groups analogs by the region of the parent they modify."
+short_title: "Analog Explorer"
+thumb: /assets/images/tools/analog-explorer.png
 ---
 
 A browser-based SAR viewer that groups analogs of a parent compound by where they differ structurally, using Maximum Common Substructure (MCS) detection. Runs entirely in your browser via [RDKit.js](https://github.com/rdkit/rdkit-js) (WebAssembly) -- no installation required.

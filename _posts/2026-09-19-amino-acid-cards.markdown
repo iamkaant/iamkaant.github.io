@@ -5,6 +5,8 @@ date: 2026-09-19 12:00:00
 categories: chemistry tools learning
 tool: true
 blurb: "Flashcard deck for the 20 residues, with Leitner scheduling and 2D side chains."
+short_title: "Amino Acid Cards"
+thumb: /assets/images/tools/amino-acid-cards.png
 ---
 
 <iframe src="/assets/amino-acid-cards.html"

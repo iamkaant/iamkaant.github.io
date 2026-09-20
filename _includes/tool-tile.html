@@ -1,0 +1,18 @@
+{%- comment -%}
+One tile on the Tools page.
+Params: title, url, blurb, thumb (optional), date (optional)
+{%- endcomment -%}
+<li class="tool-tile">
+  <a class="tool-tile-link" href="{{ include.url | relative_url }}">
+    {%- if include.thumb -%}
+    <img class="tool-thumb" src="{{ include.thumb | relative_url }}"
+         alt="Screenshot of {{ include.title | escape }}" loading="lazy">
+    {%- else -%}
+    <span class="tool-thumb tool-thumb-empty" aria-hidden="true"></span>
+    {%- endif -%}
+    <span class="tool-tile-body">
+      <span class="tool-name">{{ include.title | escape }}</span>
+      <span class="tool-blurb">{{ include.blurb | escape }}</span>
+    </span>
+  </a>
+</li>

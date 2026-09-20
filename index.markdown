@@ -7,22 +7,14 @@ Small browser-based tools I have built, mostly for computational chemistry. They
 all run entirely in your browser -- nothing to install, and no data leaves your
 machine.
 
-<ul class="tool-list">
-  {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+<ul class="tool-grid">
   {%- for t in site.data.tools -%}
-  <li class="tool-item">
-    <h3 class="tool-name"><a href="{{ t.url | relative_url }}">{{ t.title | escape }}</a></h3>
-    <p class="tool-blurb">{{ t.blurb | escape }}</p>
-    <span class="post-meta">{{ t.date | date: date_format }}</span>
-  </li>
+    {%- include tool-tile.html title=t.title url=t.url blurb=t.blurb thumb=t.thumb -%}
   {%- endfor -%}
   {%- for post in site.posts -%}
     {%- if post.tool -%}
-  <li class="tool-item">
-    <h3 class="tool-name"><a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a></h3>
-    <p class="tool-blurb">{{ post.blurb | escape }}</p>
-    <span class="post-meta">{{ post.date | date: date_format }}</span>
-  </li>
+      {%- assign tile_title = post.short_title | default: post.title -%}
+      {%- include tool-tile.html title=tile_title url=post.url blurb=post.blurb thumb=post.thumb -%}
     {%- endif -%}
   {%- endfor -%}
 </ul>
