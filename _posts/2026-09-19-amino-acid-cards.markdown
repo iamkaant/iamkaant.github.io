@@ -5,6 +5,13 @@ date: 2026-09-19 12:00:00
 categories: chemistry tools learning
 ---
 
+<iframe src="/assets/amino-acid-cards.html"
+        width="100%"
+        height="860px"
+        frameborder="0"
+        style="border: none;">
+</iframe>
+
 Every structural biology course starts with the same wall: twenty side chains, twenty names, twenty one-letter codes that mostly do not match the first letter of the name. A browser-based flashcard deck for exactly that, with a Leitner box scheduler and real 2D depictions of each side chain. Runs entirely in your browser -- nothing to install, no account, and your progress stays in your own browser's local storage.
 
 ### How to use
@@ -24,13 +31,6 @@ Every structural biology course starts with the same wall: twenty side chains, t
 - **A hook per residue** -- a mnemonic for the one-letter code, plus a note on what the side chain actually does in a protein.
 - **Keyboard driven** -- `1`–`4` pick a multiple-choice option, `space` reveals, `←`/`→` grade the self-graded cards.
 - **Dim mode** -- a brightness control, because this is the kind of thing you end up doing in bed the night before an exam.
-
-<iframe src="/assets/amino-acid-cards.html"
-        width="100%"
-        height="860px"
-        frameborder="0"
-        style="border: none;">
-</iframe>
 
 ### Notes
 
