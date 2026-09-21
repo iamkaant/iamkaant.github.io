@@ -1,5 +1,10 @@
 # Tools that live as standalone pages rather than blog posts.
 # These are listed above the post-backed tools on the Tools page.
+- title: "Back-of-the-Envelope Medchem"
+  blurb: "Fifty medchem rules of thumb, each with the number it claims, the study it came from, and the caveat."
+  url: /assets/drug_discovery_cheatsheet.html
+  date: 2026-09-20
+  thumb: /assets/images/tools/drug-discovery-cheatsheet.png
 - title: "MolCanvas"
   blurb: "Chemical structure editor that runs in the browser."
   url: /assets/MolCanvas/

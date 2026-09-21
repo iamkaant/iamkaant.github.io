@@ -1,0 +1,984 @@
+<title>Back-of-the-Envelope Medchem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#eef2f1;
+  --surface:#ffffff;
+  --surface-2:#f6f8f8;
+  --ink:#131d1b;
+  --ink-2:#3c4b48;
+  --muted:#6b7a76;
+  --faint:#94a29e;
+  --rule:#d5dedb;
+  --rule-strong:#b8c5c1;
+  --accent:#0c6a60;
+  --accent-soft:#d8ebe8;
+  --clay:#a8512b;
+  --clay-soft:#f4e3da;
+  --amber:#8a6512;
+  --shadow:0 1px 2px rgba(19,29,27,.05);
+  --f-display:"Spectral",Iowan Old Style,Palatino,Georgia,serif;
+  --f-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1413;
+    --surface:#141d1b;
+    --surface-2:#182321;
+    --ink:#e4ebe9;
+    --ink-2:#b9c6c2;
+    --muted:#8b9b96;
+    --faint:#6a7a76;
+    --rule:#26332f;
+    --rule-strong:#35453f;
+    --accent:#4fc4b3;
+    --accent-soft:#12312d;
+    --clay:#e39066;
+    --clay-soft:#33211a;
+    --amber:#d0a542;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1413;
+  --surface:#141d1b;
+  --surface-2:#182321;
+  --ink:#e4ebe9;
+  --ink-2:#b9c6c2;
+  --muted:#8b9b96;
+  --faint:#6a7a76;
+  --rule:#26332f;
+  --rule-strong:#35453f;
+  --accent:#4fc4b3;
+  --accent-soft:#12312d;
+  --clay:#e39066;
+  --clay-soft:#33211a;
+  --amber:#d0a542;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:60rem;margin:0 auto;padding-inline:20px;padding-block:0}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- masthead ---------- */
+header.mast{padding-block:44px 28px;border-bottom:1px solid var(--rule-strong)}
+.eyebrow{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px
+}
+h1{
+  font-family:var(--f-display);font-weight:600;font-size:clamp(2rem,6vw,3.1rem);
+  line-height:1.06;letter-spacing:-.015em;margin:0;text-wrap:balance;
+}
+.standfirst{
+  font-family:var(--f-display);font-size:clamp(1rem,2.4vw,1.16rem);line-height:1.55;
+  color:var(--ink-2);max-width:40rem;margin:16px 0 0;
+}
+.mast-meta{
+  display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:22px;
+  font-family:var(--f-mono);font-size:11.5px;color:var(--faint);letter-spacing:.02em;
+}
+
+/* ---------- caveat ---------- */
+.caveat{
+  margin-block:26px;padding:16px 18px;background:var(--clay-soft);
+  border-left:3px solid var(--clay);border-radius:0 3px 3px 0;
+}
+.caveat h2{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--clay);margin:0 0 8px;font-weight:500;
+}
+.caveat p{margin:0;font-size:14px;line-height:1.6;color:var(--ink-2);max-width:56rem}
+.caveat p + p{margin-top:8px}
+
+/* ---------- toolbar ---------- */
+.toolbar{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+  background:var(--paper);border-bottom:1px solid var(--rule);
+  padding-block:12px;margin-bottom:8px;
+}
+.toolrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.searchbox{position:relative;flex:1 1 15rem;min-width:0}
+.searchbox input{
+  width:100%;font-family:var(--f-sans);font-size:14px;color:var(--ink);
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:3px;
+  padding:9px 12px 9px 30px;
+}
+.searchbox input::placeholder{color:var(--faint)}
+.searchbox svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.tally{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.03em;
+  padding:5px 10px;border:1px solid var(--rule-strong);border-radius:99px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:background .12s,color .12s,border-color .12s;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chip[aria-pressed="true"]{color:#fff}
+
+/* ---------- sections ---------- */
+section.grp{padding-block:30px 6px;scroll-margin-top:110px}
+section.grp:first-of-type{padding-top:22px}
+.grp-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:4px}
+.grp-head h2{
+  font-family:var(--f-display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em;
+  margin:0;flex:1 1 auto;text-wrap:balance;
+}
+.grp-count{font-family:var(--f-mono);font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.grp-note{
+  font-size:13.5px;color:var(--muted);margin:10px 0 0;max-width:46rem;line-height:1.55;
+}
+
+/* ---------- rules ---------- */
+.rule{
+  display:grid;grid-template-columns:10.5rem minmax(0,1fr);gap:4px 22px;
+  padding-block:18px;border-bottom:1px solid var(--rule);align-items:start;
+}
+.rule > *{min-width:0}
+.lever{
+  font-family:var(--f-mono);font-size:12px;line-height:1.45;color:var(--accent);
+  font-weight:500;padding-top:3px;overflow-wrap:break-word;
+}
+.lever .arrow{color:var(--clay)}
+.claim{
+  font-family:var(--f-display);font-size:1.06rem;line-height:1.42;margin:0;color:var(--ink);
+  text-wrap:pretty;
+}
+.detail{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin:8px 0 0;max-width:44rem}
+.detail code,.num{
+  font-family:var(--f-mono);font-size:.92em;background:var(--surface-2);
+  padding:1px 4px;border-radius:2px;font-variant-numeric:tabular-nums;color:var(--ink);
+  border:1px solid var(--rule);
+}
+.eqn{
+  font-family:var(--f-mono);font-size:13px;background:var(--surface);border:1px solid var(--rule-strong);
+  border-radius:3px;padding:10px 12px;margin:10px 0 0;overflow-x:auto;white-space:nowrap;color:var(--ink);
+}
+.flag{
+  display:flex;align-items:flex-start;gap:6px;margin-top:9px;width:fit-content;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.02em;color:var(--clay);
+  background:var(--clay-soft);border-radius:2px;padding:4px 8px;line-height:1.45;
+  max-width:44rem;
+}
+.flag b{font-weight:500;text-transform:uppercase;letter-spacing:.08em;flex:none}
+.cite{
+  font-family:var(--f-mono);font-size:11.5px;line-height:1.5;color:var(--muted);
+  margin:10px 0 0;max-width:44rem;overflow-wrap:anywhere;
+}
+.cite a{color:var(--muted);text-decoration-color:var(--rule-strong)}
+.cite a:hover{color:var(--accent)}
+.cite .j{font-style:italic}
+.cite .y{color:var(--ink-2);font-weight:500}
+
+/* ---------- footer ---------- */
+footer{
+  border-top:1px solid var(--rule-strong);margin-top:40px;padding-block:26px 52px;
+  font-size:13px;color:var(--muted);line-height:1.6;
+}
+footer p{margin:0 0 8px;max-width:46rem}
+.empty{padding:50px 0;text-align:center;color:var(--muted);font-family:var(--f-mono);font-size:13px}
+
+@media (max-width:640px){
+  .rule{grid-template-columns:minmax(0,1fr);gap:6px}
+  .lever{padding-top:0}
+  section.grp{scroll-margin-top:150px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media print{
+  .toolbar,footer .noprint{display:none!important}
+  body{background:#fff;color:#000;font-size:10.5pt}
+  .rule{break-inside:avoid;page-break-inside:avoid}
+  section.grp{break-before:auto}
+  .caveat{border-left:2px solid #000;background:none}
+  a{color:#000}
+}
+
+/* ---------- figures ---------- */
+:root{ --s1:#00897c; --s2:#bc5a17; --s1-soft:#d5ebe7; --s2-soft:#f6e2d4; --panel:#f7f9f9; }
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --s1:#12a391; --s2:#d4753c; --s1-soft:#0f2e2b; --s2-soft:#331f16; --panel:#111a19; } }
+:root[data-theme="dark"]{ --s1:#12a391; --s2:#d4753c; --s1-soft:#0f2e2b; --s2-soft:#331f16; --panel:#111a19; }
+
+figure.fig{
+  margin:16px 0 4px;padding:16px 18px 14px;background:var(--surface);
+  border:1px solid var(--rule);border-radius:3px;max-width:46rem;
+}
+figure.fig svg{display:block;width:100%;height:auto;max-width:100%;font-family:var(--f-mono);overflow:visible}
+.fig-title{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px;font-weight:500;
+}
+figure.fig figcaption{font-size:12.5px;line-height:1.55;color:var(--muted);margin-top:14px;border-top:1px solid var(--rule);padding-top:11px}
+figure.fig.hero{max-width:none;margin:26px 0 0;background:var(--surface-2)}
+
+/* svg element classes */
+.fig .ax{stroke:var(--rule-strong);stroke-width:1;fill:none}
+.fig .grid{stroke:var(--rule);stroke-width:1;fill:none}
+.fig .tick{fill:var(--faint);font-size:11px}
+.fig .axlbl{fill:var(--muted)}
+.fig .rowlbl{fill:var(--ink-2)}
+.fig .vallbl{fill:var(--ink-2);font-variant-numeric:tabular-nums}
+.fig .ptlbl{fill:var(--ink);font-weight:500}
+.fig .leg{fill:var(--ink-2)}
+.fig .fig-sub{fill:var(--ink-2);font-weight:500}
+.fig .ann{fill:var(--muted);font-style:italic}
+.fig .ann2{fill:var(--ink);font-weight:500}
+.fig .ahd{fill:var(--rule-strong)}
+.fig .ahs1{fill:var(--s1)}
+
+/* hub */
+.fig .hub{fill:var(--accent);stroke:none}
+.fig .hublbl{fill:#fff;font-weight:500}
+.fig .hubsub{fill:#fff;opacity:.72}
+.fig .cost{fill:var(--s2-soft);stroke:var(--s2);stroke-width:1}
+.fig .costlbl{fill:var(--ink);font-weight:500}
+.fig .cx{stroke:var(--rule-strong);stroke-width:1.5;fill:none}
+.fig .inc{stroke:var(--s1);stroke-width:2;fill:none}
+.fig .s1lbl{fill:var(--s1);font-weight:500}
+.fig .s2lbl{fill:var(--s2);font-weight:500}
+
+/* regions & marks */
+.fig .zone{fill:var(--s1);opacity:.13;stroke:none}
+.fig .zoneline{fill:none;stroke:var(--s1);stroke-width:1.5}
+.fig .pass{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.fig .fail{fill:var(--s2);stroke:var(--surface);stroke-width:2}
+.fig .m1{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.fig .m2{fill:var(--s2);stroke:var(--surface);stroke-width:2}
+.fig .asym{stroke:var(--rule-strong);stroke-width:1;stroke-dasharray:4 4;fill:none}
+.fig .iso{stroke:var(--s1);stroke-width:1.25;fill:none;opacity:.5}
+.fig .isohi{stroke:var(--s1);stroke-width:2.25;fill:none}
+.fig .isolbl{fill:var(--muted)}
+.fig .isolblhi{fill:var(--s1);font-weight:500}
+.fig .slope{stroke:var(--s1);stroke-width:2;fill:none}
+.fig .env{stroke:var(--s1);stroke-width:2.25;fill:none}
+.fig .tangent{stroke:var(--rule-strong);stroke-width:1.25;stroke-dasharray:3 3;fill:none}
+.fig .le{stroke:var(--s2);stroke-width:2;fill:none}
+.fig .bar1{fill:var(--s1)}
+.fig .bar2{fill:var(--s2)}
+.fig .ser1{stroke:var(--s1);stroke-width:2.25;fill:none}
+.fig .ser2{stroke:var(--s2);stroke-width:2.25;fill:none}
+.fig .thr1{stroke:var(--s1);stroke-width:1.25;stroke-dasharray:3 3}
+.fig .thr2{stroke:var(--s2);stroke-width:1.25;stroke-dasharray:3 3}
+.fig .gapband{fill:var(--ink);opacity:.05}
+.fig .panel{fill:var(--panel);stroke:none}
+.fig .mpoarea{fill:var(--s1);opacity:.17;stroke:none}
+.fig .mpoline{stroke:var(--s1);stroke-width:2;fill:none}
+.fig .stepfill{fill:var(--s2);opacity:.15}
+.fig .stepline{stroke:var(--s2);stroke-width:2.5}
+.fig .stepriser{stroke:var(--s2);stroke-width:1.25;stroke-dasharray:3 3}
+.fig .q-good{fill:var(--s1-soft);stroke:var(--s1);stroke-width:1.5}
+.fig .q-bad{fill:var(--s2-soft);stroke:var(--s2);stroke-width:1.5}
+.fig .q-mid{fill:var(--surface-2);stroke:var(--rule);stroke-width:1}
+.fig .qbig{fill:var(--ink);font-weight:500}
+.fig .qsub{fill:var(--muted)}
+.fig .colhdr{fill:var(--ink-2);font-weight:500}
+.fig .diag{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;fill:none;opacity:.5}
+@media (max-width:640px){
+  figure.fig{padding:12px 12px 11px}
+  .fig-title{font-size:10px}
+}
+@media print{ figure.fig{break-inside:avoid;page-break-inside:avoid;background:none} }
+
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Small-molecule design &middot; rules of thumb</p>
+  <h1>Back-of-the-Envelope Medchem</h1>
+  <p class="standfirst">Fifty design heuristics that hold up across large compound sets &mdash; each with the number it actually claims, the study it came from, and the caveat that usually gets dropped in retelling.</p>
+  <div class="mast-meta">
+    <span id="metaCount">&mdash;</span>
+    <span id="metaCats">&mdash;</span>
+    <span>Compiled Sep 2026</span>
+  </div>
+</header>
+
+<div class="caveat">
+  <h2>How to read these</h2>
+  <p>Every rule here is a <em>population-level trend</em>, usually a shift in the odds across <span class="num">10<sup>2</sup></span>&ndash;<span class="num">10<sup>5</sup></span> compounds. None of them predicts your next analogue. A series that sits outside the envelope and still works is a real series, not a violation &mdash; the rules describe where the base rate is favourable, not where chemistry is permitted.</p>
+  <p>Where the original paper is softer than the slogan it spawned, that gap is marked. Numbers are quoted from the primary source; two entries carry figures that could only be confirmed through citing reviews, and those say so.</p>
+</div>
+
+<figure class="fig hero" id="fig-hub">
+<p class="fig-title">Lipophilicity is the master variable</p>
+<svg role="img" aria-label="Central node reading logP or logD increasing, with one incoming arrow labelled potency increases in almost any assay, and five outgoing arrows to solubility falling, CYP inhibition rising, clearance rising, hERG block rising, and in vivo toxicity rising." viewBox="0 0 780 392"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="ahd"/></marker><marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="ahs1"/></marker></defs><rect x="60" y="156" width="186" height="52" rx="3" class="hub"/><text x="153.0" y="184.0" class="hublbl" text-anchor="middle" font-size="15">logP / logD &#8593;</text><text x="153.0" y="202.0" class="hubsub" text-anchor="middle" font-size="10.5">the master variable</text><path d="M153,348 L153,214" class="inc" marker-end="url(#ahs)"/><text x="153.0" y="372.0" class="s1lbl" text-anchor="middle" font-size="11.5">potency &#8593; in almost any assay</text><text x="153.0" y="386.0" class="tick" text-anchor="middle" font-size="10.5">&#8212; this is why it drifts</text><rect x="448" y="18" width="300" height="50" rx="3" class="cost"/><text x="462.0" y="39.0" class="costlbl" text-anchor="start" font-size="12.5">Solubility &#8595;</text><text x="462.0" y="56.0" class="tick" text-anchor="start" font-size="11">&#8722;1 log S per logP unit</text><path d="M250,182 C 340,182 350,43.0 440,43.0" class="cx" marker-end="url(#ah)"/><rect x="448" y="84" width="300" height="50" rx="3" class="cost"/><text x="462.0" y="105.0" class="costlbl" text-anchor="start" font-size="12.5">CYP inhibition &#8593;</text><text x="462.0" y="122.0" class="tick" text-anchor="start" font-size="11">all five major isoforms</text><path d="M250,182 C 340,182 350,109.0 440,109.0" class="cx" marker-end="url(#ah)"/><rect x="448" y="150" width="300" height="50" rx="3" class="cost"/><text x="462.0" y="171.0" class="costlbl" text-anchor="start" font-size="12.5">Clearance &#8593;</text><text x="462.0" y="188.0" class="tick" text-anchor="start" font-size="11">2.2 &#8594; 7.8 mL/min/kg</text><path d="M250,182 C 340,182 350,175.0 440,175.0" class="cx" marker-end="url(#ah)"/><rect x="448" y="216" width="300" height="50" rx="3" class="cost"/><text x="462.0" y="237.0" class="costlbl" text-anchor="start" font-size="12.5">hERG block &#8593;</text><text x="462.0" y="254.0" class="tick" text-anchor="start" font-size="11">neutral logD&lt;3.3 &#183; basic &lt;1.4</text><path d="M250,182 C 340,182 350,241.0 440,241.0" class="cx" marker-end="url(#ah)"/><rect x="448" y="282" width="300" height="50" rx="3" class="cost"/><text x="462.0" y="303.0" class="costlbl" text-anchor="start" font-size="12.5">In vivo tox &#8593;</text><text x="462.0" y="320.0" class="tick" text-anchor="start" font-size="11">odds ratio &gt;6 with TPSA&lt;75</text><path d="M250,182 C 340,182 350,307.0 440,307.0" class="cx" marker-end="url(#ah)"/></svg>
+<figcaption>Every consequence of raising logP is a cost except one &#8212; and that one is the property measured first and most often. The diagram is the mechanism behind &ldquo;molecular obesity&rdquo;: the incentive arrow points one way, all five cost arrows point the other. Sources for each number are in the corresponding rule below.</figcaption>
+</figure>
+
+<div class="toolbar">
+  <div class="toolrow">
+    <div class="searchbox">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+      <input id="q" type="search" placeholder="Search rules, properties, authors&hellip;" autocomplete="off" aria-label="Search rules">
+    </div>
+    <span class="tally" id="tally"></span>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+</div>
+
+<main id="main">
+
+<section class="grp" id="envelope" data-label="Property envelope">
+  <div class="grp-head"><h2>The property envelope</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Filters for where to start, not gates for what to keep. Each was fitted to a particular assay and a particular company&rsquo;s chemistry.</p>
+
+  <article class="rule">
+    <div class="lever">Rule of Five<br>MW &middot; logP &middot; HBD &middot; HBA</div>
+    <div>
+      <p class="claim">Poor absorption or permeation becomes more likely once two or more of four limits are breached.</p>
+      <p class="detail">HBD &gt; <span class="num">5</span>, HBA &gt; <span class="num">10</span>, MW &gt; <span class="num">500</span>, ClogP &gt; <span class="num">5</span> (or MlogP &gt; <span class="num">4.15</span>). The rule was derived for <em>passive</em> oral absorption and explicitly excludes substrates of biological transporters &mdash; along with antibiotics, antifungals, vitamins and cardiac glycosides.</p>
+      <div class="flag"><b>Note</b><span>It predicts liability, not failure, and says nothing about potency, toxicity or metabolic stability.</span></div>
+      <p class="cite">Lipinski, Lombardo, Dominy &amp; Feeney. <span class="j">Adv. Drug Deliv. Rev.</span> <span class="y">1997</span>, 23, 3&ndash;25; reprinted <span class="y">2001</span>, 46, 3&ndash;26. <a href="https://doi.org/10.1016/S0169-409X(00)00129-0">10.1016/S0169-409X(00)00129-0</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Veber rules<br>rot. bonds &middot; TPSA</div>
+    <div>
+      <p class="claim">Rotatable-bond count and polarity predict rat oral bioavailability better than molecular weight does.</p>
+      <p class="detail">Good %F is likely when rotatable bonds &le; <span class="num">10</span> <strong>and</strong> either TPSA &le; <span class="num">140 &Aring;&sup2;</span> or the <em>sum</em> of H-bond donors and acceptors &le; <span class="num">12</span>. Fitted on &gt;<span class="num">1100</span> GSK candidates.</p>
+      <div class="flag"><b>Note</b><span>In this dataset the MW&nbsp;500 cutoff did <em>not</em> separate poor from acceptable bioavailability &mdash; MW was a proxy for flexibility and polarity all along.</span></div>
+      <p class="cite">Veber, Johnson, Cheng, Smith, Ward &amp; Kopple. <span class="j">J. Med. Chem.</span> <span class="y">2002</span>, 45, 2615&ndash;2623. <a href="https://doi.org/10.1021/jm020017n">10.1021/jm020017n</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Rule of Three<br>fragments</div>
+    <div>
+      <p class="claim">Fragment libraries need a tighter envelope than lead libraries, because everything downstream adds mass.</p>
+      <p class="detail">MW &lt; <span class="num">300</span>, HBD &le; <span class="num">3</span>, HBA &le; <span class="num">3</span>, ClogP &le; <span class="num">3</span>. Rotatable bonds &le; <span class="num">3</span> and PSA &le; <span class="num">60 &Aring;&sup2;</span> were offered as secondary criteria, not part of the rule proper.</p>
+      <div class="flag"><b>Note</b><span>Congreve and Jhoti observed in 2013 that the HBD/HBA criteria &ldquo;have not been widely adopted&rdquo;; MW and ClogP carry the rule in practice.</span></div>
+      <p class="cite">Congreve, Carr, Murray &amp; Jhoti. <span class="j">Drug Discov. Today</span> <span class="y">2003</span>, 8, 876&ndash;877. <a href="https://doi.org/10.1016/S1359-6446(03)02831-9">10.1016/S1359-6446(03)02831-9</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Lead-likeness<br>start low</div>
+    <div>
+      <p class="claim">Screen below the drug-like envelope, because optimisation reliably drifts upward in both size and lipophilicity.</p>
+      <p class="detail">Original cut-offs: MW &lt; <span class="num">350</span>, ClogP &lt; <span class="num">3.5</span>. Oprea later relaxed them to MW &lt; <span class="num">450</span> / ClogP &lt; <span class="num">4.5</span> as &ldquo;too restrictive.&rdquo; The underlying observation is that affinity enhancement is nearly always bought with mass and lipophilicity, so a drug-like starting point leaves no headroom.</p>
+      <p class="cite">Teague, Davis, Leeson &amp; Oprea. <span class="j">Angew. Chem. Int. Ed.</span> <span class="y">1999</span>, 38, 3743&ndash;3748. <a href="https://doi.org/10.1002/(SICI)1521-3773(19991216)38:24%3C3743::AID-ANIE3743%3E3.0.CO;2-U">10.1002/(SICI)1521-3773(19991216)38:24&lt;3743::AID-ANIE3743&gt;3.0.CO;2-U</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">GSK 4/400<br>MW &middot; logP &middot; charge</div>
+    <div>
+      <p class="claim">Above MW 400 and logP 4, essentially every ADMET endpoint gets worse at once.</p>
+      <p class="detail">Solubility, permeability, bioavailability, volume of distribution, plasma protein binding, CNS penetration, brain tissue binding, P-gp efflux, hERG inhibition and CYP <span class="num">1A2/2C9/2C19/2D6/3A4</span> inhibition all deteriorate with rising MW, logP, or both. Ionisation state is the third variable and is usually dropped from the shorthand &mdash; acids and bases behave oppositely for protein binding versus hERG.</p>
+      <div class="flag"><b>Note</b><span>&ldquo;4/400&rdquo; is community shorthand. The paper presents binned property trends; it never names a rule.</span></div>
+      <p class="cite">Gleeson. <span class="j">J. Med. Chem.</span> <span class="y">2008</span>, 51, 817&ndash;834. <a href="https://doi.org/10.1021/jm701122q">10.1021/jm701122q</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Golden Triangle<br>MW vs logD</div>
+    <div>
+      <p class="claim">The window of acceptable lipophilicity narrows as molecular weight rises &mdash; permeability and clearance pull in opposite directions.</p>
+      <p class="detail">Plot MW on <em>y</em> against logD<sub>7.4</sub> on <em>x</em>: the tolerable region is a triangle with its apex near MW <span class="num">450</span>. At the centre (logD <span class="num">1.5</span>, MW <span class="num">350</span>), <span class="num">29%</span> of compounds passed both the permeability and the metabolic-stability criterion; at MW <span class="num">450</span> with logD <span class="num">0</span> or <span class="num">3</span>, &le;<span class="num">4%</span> did.</p>
+      <div class="flag"><b>Check the figure</b><span>Secondary sources disagree on the width of the base (logD &minus;2 to 5 versus 0 to 3). The MW&nbsp;450 apex is consistent. Some tools implement it as a crude bounding box, which is not the paper&rsquo;s triangle.</span></div>
+      <p class="cite">Johnson, Dress &amp; Edwards. <span class="j">Bioorg. Med. Chem. Lett.</span> <span class="y">2009</span>, 19, 5560&ndash;5564. <a href="https://doi.org/10.1016/j.bmcl.2009.08.045">10.1016/j.bmcl.2009.08.045</a></p>
+      <figure class="fig" id="fig-triangle">
+<p class="fig-title">The Golden Triangle</p>
+<svg role="img" aria-label="Triangular acceptable region on axes of logD against molecular weight, apex at molecular weight 450. A marker at logD 1.5 and molecular weight 350 inside the region is labelled 29 percent; two markers at molecular weight 450 with logD 0 and logD 3, outside the region, are each labelled at most 4 percent." viewBox="0 0 620 372"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="ahd"/></marker><marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="ahs1"/></marker></defs><line x1="62.0" y1="22.0" x2="62.0" y2="300.0" class="grid"/><text x="62.0" y="318.0" class="tick" text-anchor="middle">-2</text><line x1="138.3" y1="22.0" x2="138.3" y2="300.0" class="grid"/><text x="138.3" y="318.0" class="tick" text-anchor="middle">-1</text><line x1="214.6" y1="22.0" x2="214.6" y2="300.0" class="grid"/><text x="214.6" y="318.0" class="tick" text-anchor="middle">0</text><line x1="290.9" y1="22.0" x2="290.9" y2="300.0" class="grid"/><text x="290.9" y="318.0" class="tick" text-anchor="middle">1</text><line x1="367.1" y1="22.0" x2="367.1" y2="300.0" class="grid"/><text x="367.1" y="318.0" class="tick" text-anchor="middle">2</text><line x1="443.4" y1="22.0" x2="443.4" y2="300.0" class="grid"/><text x="443.4" y="318.0" class="tick" text-anchor="middle">3</text><line x1="519.7" y1="22.0" x2="519.7" y2="300.0" class="grid"/><text x="519.7" y="318.0" class="tick" text-anchor="middle">4</text><line x1="596.0" y1="22.0" x2="596.0" y2="300.0" class="grid"/><text x="596.0" y="318.0" class="tick" text-anchor="middle">5</text><line x1="62.0" y1="282.6" x2="596.0" y2="282.6" class="grid"/><text x="52.0" y="286.6" class="tick" text-anchor="end">200</text><line x1="62.0" y1="239.2" x2="596.0" y2="239.2" class="grid"/><text x="52.0" y="243.2" class="tick" text-anchor="end">250</text><line x1="62.0" y1="195.8" x2="596.0" y2="195.8" class="grid"/><text x="52.0" y="199.8" class="tick" text-anchor="end">300</text><line x1="62.0" y1="152.3" x2="596.0" y2="152.3" class="grid"/><text x="52.0" y="156.3" class="tick" text-anchor="end">350</text><line x1="62.0" y1="108.9" x2="596.0" y2="108.9" class="grid"/><text x="52.0" y="112.9" class="tick" text-anchor="end">400</text><line x1="62.0" y1="65.4" x2="596.0" y2="65.4" class="grid"/><text x="52.0" y="69.4" class="tick" text-anchor="end">450</text><line x1="62.0" y1="22.0" x2="596.0" y2="22.0" class="grid"/><text x="52.0" y="26.0" class="tick" text-anchor="end">500</text><polygon points="62.0,282.6 596.0,282.6 329.0,65.4" class="zone"/><polygon points="62.0,282.6 596.0,282.6 329.0,65.4" class="zoneline"/><text x="329.0" y="254.8" class="ann" text-anchor="middle" font-size="11.5">passes permeability AND</text><text x="329.0" y="272.2" class="ann" text-anchor="middle" font-size="11.5">metabolic stability</text><circle cx="329.0" cy="152.3" r="5.5" class="pass"/><text x="329.0" y="138.3" class="ptlbl" text-anchor="middle" font-size="13">29%</text><circle cx="214.6" cy="65.4" r="5.5" class="fail"/><text x="214.6" y="51.4" class="ptlbl" text-anchor="middle" font-size="13">&#8804;4%</text><circle cx="443.4" cy="65.4" r="5.5" class="fail"/><text x="443.4" y="51.4" class="ptlbl" text-anchor="middle" font-size="13">&#8804;4%</text><text x="329.0" y="174.3" class="tick" text-anchor="middle" font-size="10.5">logD 1.5 &#183; MW 350</text><text x="214.6" y="87.4" class="tick" text-anchor="middle" font-size="10.5">logD 0</text><text x="443.4" y="87.4" class="tick" text-anchor="middle" font-size="10.5">logD 3</text><line x1="62.0" y1="300.0" x2="596.0" y2="300.0" class="ax"/><line x1="62.0" y1="22.0" x2="62.0" y2="300.0" class="ax"/><text x="329.0" y="342.0" class="axlbl" text-anchor="middle" font-size="12">logD or eLogD (octanol : buffer, pH 7.4)</text><text transform="translate(18,161.0) rotate(-90)" class="axlbl" text-anchor="middle" font-size="12">molecular weight</text></svg>
+<figcaption>Percentages are the share of compounds passing <em>both</em> the permeability and the metabolic-stability criterion. The apex at MW&nbsp;450 is consistent across sources; the width of the base is not &#8212; secondary accounts give logD &#8722;2 to 5 and 0 to 3. Check Figure&nbsp;3 of the paper before quoting vertices. Shaded region: where both criteria can be met &#8212; both MW-450 markers fall outside it.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Beyond Rule of Five<br>MW &gt; 500</div>
+    <div>
+      <p class="claim">Orally bioavailable drugs exist well outside Ro5 space, but they get there by specific mechanisms rather than by luck.</p>
+      <p class="detail">Macrocyclisation, N-methylation, intramolecular hydrogen bonding, and high dose or enabling formulation are what make bRo5 oral exposure achievable. Natural products and structure-based design from peptidic leads are the two main sources of this chemotype.</p>
+      <div class="flag"><b>No fixed envelope</b><span>Citing reviews attribute several conflicting numeric ranges to this paper (MW &le;&nbsp;700 vs &le;&nbsp;1000, and so on). Treat bRo5 as a mechanism argument, not a new set of cut-offs.</span></div>
+      <p class="cite">Doak, Over, Giordanetto &amp; Kihlberg. <span class="j">Chem. Biol.</span> <span class="y">2014</span>, 21, 1115&ndash;1142. <a href="https://doi.org/10.1016/j.chembiol.2014.08.013">10.1016/j.chembiol.2014.08.013</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Contested<br>is MW &ldquo;drug-like&rdquo;?</div>
+    <div>
+      <p class="claim">Over two decades of approvals, the ClogP and HBD ceilings held while the MW and HBA ceilings moved substantially.</p>
+      <p class="detail">A property whose apparent limit tracks the calendar is a property of medicinal-chemistry practice, not of drugs. Shultz argues this &ldquo;calls into question the entire hypothesis that &lsquo;drug-like&rsquo; properties exist&rdquo; &mdash; and at minimum means MW deserves less weight than lipophilicity and HBD count.</p>
+      <p class="cite">Shultz. <span class="j">J. Med. Chem.</span> <span class="y">2019</span>, 62, 1701&ndash;1714. <a href="https://doi.org/10.1021/acs.jmedchem.8b00686">10.1021/acs.jmedchem.8b00686</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="solubility" data-label="Solubility">
+  <div class="grp-head"><h2>Solubility</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Two independent terms set aqueous solubility: how much the molecule likes octanol, and how much it likes its own crystal. Most design effort attacks only the first.</p>
+
+  <article class="rule">
+    <div class="lever">General Solubility<br>Equation</div>
+    <div>
+      <p class="claim">Solubility is predicted from just two measured quantities: melting point and logP.</p>
+      <div class="eqn">log S = 0.5 &minus; 0.01 (MP &minus; 25) &minus; log K<sub>ow</sub></div>
+      <p class="detail">S is intrinsic solubility in <span class="num">mol/L</span>, MP in <span class="num">&deg;C</span>; for liquids (MP &lt; 25 &deg;C) the melting-point term goes to zero. Validated on <span class="num">580</span> pharmaceutically, environmentally and industrially relevant nonelectrolytes.</p>
+      <p class="cite">Jain &amp; Yalkowsky. <span class="j">J. Pharm. Sci.</span> <span class="y">2001</span>, 90, 234&ndash;252. <a href="https://doi.org/10.1002/1520-6017(200102)90:2%3C234::AID-JPS14%3E3.0.CO;2-V">10.1002/1520-6017(200102)90:2&lt;234::AID-JPS14&gt;3.0.CO;2-V</a></p>
+      <figure class="fig" id="fig-gse">
+<p class="fig-title">Iso-solubility lines from the General Solubility Equation</p>
+<svg role="img" aria-label="Family of parallel straight lines on axes of logP against melting point, each marking a constant solubility from 10 millimolar to 1 micromolar. A marker at logP 3.25 and melting point 150 degrees Celsius sits on the 100 micromolar line." viewBox="0 0 620 368"><line x1="66.0" y1="26.0" x2="66.0" y2="300.0" class="grid"/><text x="66.0" y="318.0" class="tick" text-anchor="middle">0</text><line x1="148.3" y1="26.0" x2="148.3" y2="300.0" class="grid"/><text x="148.3" y="318.0" class="tick" text-anchor="middle">1</text><line x1="230.7" y1="26.0" x2="230.7" y2="300.0" class="grid"/><text x="230.7" y="318.0" class="tick" text-anchor="middle">2</text><line x1="313.0" y1="26.0" x2="313.0" y2="300.0" class="grid"/><text x="313.0" y="318.0" class="tick" text-anchor="middle">3</text><line x1="395.3" y1="26.0" x2="395.3" y2="300.0" class="grid"/><text x="395.3" y="318.0" class="tick" text-anchor="middle">4</text><line x1="477.7" y1="26.0" x2="477.7" y2="300.0" class="grid"/><text x="477.7" y="318.0" class="tick" text-anchor="middle">5</text><line x1="560.0" y1="26.0" x2="560.0" y2="300.0" class="grid"/><text x="560.0" y="318.0" class="tick" text-anchor="middle">6</text><line x1="66.0" y1="26.0" x2="560.0" y2="26.0" class="grid"/><text x="56.0" y="30.0" class="tick" text-anchor="end">0</text><line x1="66.0" y1="71.7" x2="560.0" y2="71.7" class="grid"/><text x="56.0" y="75.7" class="tick" text-anchor="end">50</text><line x1="66.0" y1="117.3" x2="560.0" y2="117.3" class="grid"/><text x="56.0" y="121.3" class="tick" text-anchor="end">100</text><line x1="66.0" y1="163.0" x2="560.0" y2="163.0" class="grid"/><text x="56.0" y="167.0" class="tick" text-anchor="end">150</text><line x1="66.0" y1="208.7" x2="560.0" y2="208.7" class="grid"/><text x="56.0" y="212.7" class="tick" text-anchor="end">200</text><line x1="66.0" y1="254.3" x2="560.0" y2="254.3" class="grid"/><text x="56.0" y="258.3" class="tick" text-anchor="end">250</text><line x1="66.0" y1="300.0" x2="560.0" y2="300.0" class="grid"/><text x="56.0" y="304.0" class="tick" text-anchor="end">300</text><polygon points="66.0,26.0 457.1,26.0 210.1,300.0 66.0,300.0" class="zone"/><path d="M292.4,26.0 L288.3,30.6 L284.2,35.1 L280.1,39.7 L275.9,44.3 L271.8,48.8 L267.7,53.4 L263.6,58.0 L259.5,62.5 L255.4,67.1 L251.2,71.7 L247.1,76.2 L243.0,80.8 L238.9,85.4 L234.8,89.9 L230.7,94.5 L226.6,99.1 L222.4,103.6 L218.3,108.2 L214.2,112.8 L210.1,117.3 L206.0,121.9 L201.8,126.5 L197.7,131.0 L193.6,135.6 L189.5,140.2 L185.4,144.7 L181.3,149.3 L177.1,153.9 L173.0,158.4 L168.9,163.0 L164.8,167.6 L160.7,172.1 L156.6,176.7 L152.4,181.3 L148.3,185.8 L144.2,190.4 L140.1,195.0 L136.0,199.5 L131.9,204.1 L127.8,208.7 L123.6,213.2 L119.5,217.8 L115.4,222.4 L111.3,226.9 L107.2,231.5 L103.1,236.1 L98.9,240.6 L94.8,245.2 L90.7,249.8 L86.6,254.3 L82.5,258.9 L78.3,263.5 L74.2,268.0 L70.1,272.6 L66.0,277.2" class="iso"/><text x="275.7" y="57.4" class="isolbl" text-anchor="start" font-size="11">10 mM</text><path d="M374.8,26.0 L370.6,30.6 L366.5,35.1 L362.4,39.7 L358.3,44.3 L354.2,48.8 L350.1,53.4 L345.9,58.0 L341.8,62.5 L337.7,67.1 L333.6,71.7 L329.5,76.2 L325.4,80.8 L321.2,85.4 L317.1,89.9 L313.0,94.5 L308.9,99.1 L304.8,103.6 L300.6,108.2 L296.5,112.8 L292.4,117.3 L288.3,121.9 L284.2,126.5 L280.1,131.0 L275.9,135.6 L271.8,140.2 L267.7,144.7 L263.6,149.3 L259.5,153.9 L255.4,158.4 L251.2,163.0 L247.1,167.6 L243.0,172.1 L238.9,176.7 L234.8,181.3 L230.7,185.8 L226.6,190.4 L222.4,195.0 L218.3,199.5 L214.2,204.1 L210.1,208.7 L206.0,213.2 L201.8,217.8 L197.7,222.4 L193.6,226.9 L189.5,231.5 L185.4,236.1 L181.3,240.6 L177.2,245.2 L173.0,249.8 L168.9,254.3 L164.8,258.9 L160.7,263.5 L156.6,268.0 L152.4,272.6 L148.3,277.2 L144.2,281.7 L140.1,286.3 L136.0,290.9 L131.9,295.4 L127.8,300.0" class="iso"/><text x="325.1" y="93.9" class="isolbl" text-anchor="start" font-size="11">1 mM</text><path d="M457.1,26.0 L453.0,30.6 L448.9,35.1 L444.7,39.7 L440.6,44.3 L436.5,48.8 L432.4,53.4 L428.3,58.0 L424.1,62.5 L420.0,67.1 L415.9,71.7 L411.8,76.2 L407.7,80.8 L403.6,85.4 L399.4,89.9 L395.3,94.5 L391.2,99.1 L387.1,103.6 L383.0,108.2 L378.9,112.8 L374.8,117.3 L370.6,121.9 L366.5,126.5 L362.4,131.0 L358.3,135.6 L354.2,140.2 L350.1,144.7 L345.9,149.3 L341.8,153.9 L337.7,158.4 L333.6,163.0 L329.5,167.6 L325.4,172.1 L321.2,176.7 L317.1,181.3 L313.0,185.8 L308.9,190.4 L304.8,195.0 L300.6,199.5 L296.5,204.1 L292.4,208.7 L288.3,213.2 L284.2,217.8 L280.1,222.4 L275.9,226.9 L271.8,231.5 L267.7,236.1 L263.6,240.6 L259.5,245.2 L255.4,249.8 L251.2,254.3 L247.1,258.9 L243.0,263.5 L238.9,268.0 L234.8,272.6 L230.7,277.2 L226.5,281.7 L222.4,286.3 L218.3,290.9 L214.2,295.4 L210.1,300.0" class="isohi"/><text x="374.5" y="130.5" class="isolblhi" text-anchor="start" font-size="11">100 &#181;M</text><path d="M539.4,26.0 L535.3,30.6 L531.2,35.1 L527.1,39.7 L523.0,44.3 L518.8,48.8 L514.7,53.4 L510.6,58.0 L506.5,62.5 L502.4,67.1 L498.2,71.7 L494.1,76.2 L490.0,80.8 L485.9,85.4 L481.8,89.9 L477.7,94.5 L473.6,99.1 L469.4,103.6 L465.3,108.2 L461.2,112.8 L457.1,117.3 L453.0,121.9 L448.9,126.5 L444.7,131.0 L440.6,135.6 L436.5,140.2 L432.4,144.7 L428.3,149.3 L424.1,153.9 L420.0,158.4 L415.9,163.0 L411.8,167.6 L407.7,172.1 L403.6,176.7 L399.4,181.3 L395.3,185.8 L391.2,190.4 L387.1,195.0 L383.0,199.5 L378.9,204.1 L374.8,208.7 L370.6,213.2 L366.5,217.8 L362.4,222.4 L358.3,226.9 L354.2,231.5 L350.1,236.1 L345.9,240.6 L341.8,245.2 L337.7,249.8 L333.6,254.3 L329.5,258.9 L325.4,263.5 L321.2,268.0 L317.1,272.6 L313.0,277.2 L308.9,281.7 L304.8,286.3 L300.6,290.9 L296.5,295.4 L292.4,300.0" class="iso"/><text x="423.9" y="167.0" class="isolbl" text-anchor="start" font-size="11">10 &#181;M</text><path d="M560.0,94.5 L555.9,99.1 L551.8,103.6 L547.6,108.2 L543.5,112.8 L539.4,117.3 L535.3,121.9 L531.2,126.5 L527.1,131.0 L523.0,135.6 L518.8,140.2 L514.7,144.7 L510.6,149.3 L506.5,153.9 L502.4,158.4 L498.2,163.0 L494.1,167.6 L490.0,172.1 L485.9,176.7 L481.8,181.3 L477.7,185.8 L473.6,190.4 L469.4,195.0 L465.3,199.5 L461.2,204.1 L457.1,208.7 L453.0,213.2 L448.9,217.8 L444.7,222.4 L440.6,226.9 L436.5,231.5 L432.4,236.1 L428.3,240.6 L424.1,245.2 L420.0,249.8 L415.9,254.3 L411.8,258.9 L407.7,263.5 L403.6,268.0 L399.4,272.6 L395.3,277.2 L391.2,281.7 L387.1,286.3 L383.0,290.9 L378.9,295.4 L374.8,300.0" class="iso"/><text x="473.3" y="203.5" class="isolbl" text-anchor="start" font-size="11">1 &#181;M</text><circle cx="333.6" cy="163.0" r="5.5" class="pass"/><text x="321.6" y="159.0" class="ptlbl" text-anchor="end" font-size="11.5">MP 150 &#176;C needs logP &lt; 3.25</text><text x="321.6" y="174.0" class="tick" text-anchor="end" font-size="10.5">to reach 100 &#181;M</text><line x1="66.0" y1="300.0" x2="560.0" y2="300.0" class="ax"/><line x1="66.0" y1="26.0" x2="66.0" y2="300.0" class="ax"/><text x="313.0" y="342.0" class="axlbl" text-anchor="middle" font-size="12">logP</text><text transform="translate(20,163.0) rotate(-90)" class="axlbl" text-anchor="middle" font-size="12">melting point (&#176;C)</text></svg>
+<figcaption>Drawn directly from log&nbsp;S = 0.5 &#8722; 0.01(MP &#8722; 25) &#8722; log&nbsp;K<sub>ow</sub>; nothing here is fitted. The lines are parallel because melting point and logP enter the equation with fixed coefficients, which is the whole argument for treating crystal packing as a design variable: 100&nbsp;&#176;C of melting point costs exactly as much solubility as one logP unit. Shaded region: solubility better than 100&nbsp;&#181;M. Every line has slope &#8722;100&nbsp;&#176;C per logP unit &#8212; the two terms trade one for one.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever"><span class="arrow">&uarr;</span> logP<br><span class="arrow">&darr;</span> solubility</div>
+    <div>
+      <p class="claim">One unit of logP costs one log unit of aqueous solubility.</p>
+      <p class="detail">This is not an empirical correlation but the coefficient of <span class="num">&minus;1.0</span> on log K<sub>ow</sub> in the GSE. The practical consequence: in a 711-compound set, roughly <span class="num">50%</span> of compounds with logP &lt; 3 were soluble, against about <span class="num">1%</span> of those with logP &gt; 3.</p>
+      <p class="cite">Jain &amp; Yalkowsky, <span class="j">J. Pharm. Sci.</span> <span class="y">2001</span> (as above). Empirical figures: Waring. <span class="j">Expert Opin. Drug Discov.</span> <span class="y">2010</span>, 5, 235&ndash;248. <a href="https://doi.org/10.1517/17460441003605098">10.1517/17460441003605098</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">melting point<br>100 &deg;C = 1 log S</div>
+    <div>
+      <p class="claim">Crystal packing costs as much solubility as lipophilicity does, and nobody optimises against it.</p>
+      <p class="detail">The GSE&rsquo;s <span class="num">&minus;0.01</span> coefficient on melting point means each <span class="num">100 &deg;C</span> of MP removes one log unit of solubility. Flat, rigid, symmetric molecules pack well and melt high &mdash; so planarisation is charged twice: once through logP, once through the lattice. A compound melting at <span class="num">150 &deg;C</span> needs logP &lt; <span class="num">3.25</span> to reach 100 &micro;M.</p>
+      <p class="cite">Jain &amp; Yalkowsky, <span class="j">J. Pharm. Sci.</span> <span class="y">2001</span>; worked example from Waring, <span class="j">Expert Opin. Drug Discov.</span> <span class="y">2010</span>, 5, 235&ndash;248.</p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever"><span class="arrow">&uarr;</span> Fsp&sup3;<br>escape from flatland</div>
+    <div>
+      <p class="claim">Raising the fraction of sp&sup3; carbons raises solubility, lowers melting point, and tracks clinical progression.</p>
+      <p class="detail">Mean Fsp&sup3; rises from <span class="num">0.36</span> in discovery compounds to <span class="num">0.47</span> in marketed drugs &mdash; a <span class="num">31%</span> increase, with a steady climb through Phase I &rarr; II &rarr; III. Chirality moves with it: compounds carrying at least one stereocentre go from <span class="num">46%</span> of discovery compounds to <span class="num">61%</span> of drugs. Lovering frames solubility as the mechanism behind the survival advantage.</p>
+      <p class="cite">Lovering, Bikker &amp; Humblet. <span class="j">J. Med. Chem.</span> <span class="y">2009</span>, 52, 6752&ndash;6756. <a href="https://doi.org/10.1021/jm901241e">10.1021/jm901241e</a></p>
+      <figure class="fig" id="fig-fsp3">
+<p class="fig-title">Saturation rises with clinical stage</p>
+<svg role="img" aria-label="Two small panels. Left: fraction of sp3 carbons rises from 0.36 in discovery compounds to 0.47 in marketed drugs. Right: the share of compounds with at least one stereocentre rises from 46 percent to 61 percent." viewBox="0 0 620 250"><text x="56.0" y="34.0" class="fig-sub" text-anchor="start" font-size="12">Fraction sp&#179; carbons</text><line x1="56.0" y1="196.0" x2="342.0" y2="196.0" class="grid"/><text x="48.0" y="200.0" class="tick" text-anchor="end">0.30</text><line x1="56.0" y1="160.5" x2="342.0" y2="160.5" class="grid"/><text x="48.0" y="164.5" class="tick" text-anchor="end">0.35</text><line x1="56.0" y1="125.0" x2="342.0" y2="125.0" class="grid"/><text x="48.0" y="129.0" class="tick" text-anchor="end">0.40</text><line x1="56.0" y1="89.5" x2="342.0" y2="89.5" class="grid"/><text x="48.0" y="93.5" class="tick" text-anchor="end">0.45</text><line x1="56.0" y1="54.0" x2="342.0" y2="54.0" class="grid"/><text x="48.0" y="58.0" class="tick" text-anchor="end">0.50</text><line x1="118.9" y1="153.4" x2="279.1" y2="75.3" class="slope"/><circle cx="118.9" cy="153.4" r="6" class="pass"/><text x="118.9" y="138.4" class="ptlbl" text-anchor="middle" font-size="13">0.36</text><text x="118.9" y="216.0" class="tick" text-anchor="middle" font-size="11">Discovery</text><circle cx="279.1" cy="75.3" r="6" class="pass"/><text x="279.1" y="60.3" class="ptlbl" text-anchor="middle" font-size="13">0.47</text><text x="279.1" y="216.0" class="tick" text-anchor="middle" font-size="11">Marketed drugs</text><line x1="56.0" y1="196.0" x2="342.0" y2="196.0" class="ax"/><line x1="56.0" y1="54.0" x2="56.0" y2="196.0" class="ax"/><text x="352.0" y="34.0" class="fig-sub" text-anchor="start" font-size="12">Compounds with &#8805;1 stereocentre</text><line x1="352.0" y1="196.0" x2="638.0" y2="196.0" class="grid"/><text x="344.0" y="200.0" class="tick" text-anchor="end">40</text><line x1="352.0" y1="167.6" x2="638.0" y2="167.6" class="grid"/><text x="344.0" y="171.6" class="tick" text-anchor="end">45</text><line x1="352.0" y1="139.2" x2="638.0" y2="139.2" class="grid"/><text x="344.0" y="143.2" class="tick" text-anchor="end">50</text><line x1="352.0" y1="110.8" x2="638.0" y2="110.8" class="grid"/><text x="344.0" y="114.8" class="tick" text-anchor="end">55</text><line x1="352.0" y1="82.4" x2="638.0" y2="82.4" class="grid"/><text x="344.0" y="86.4" class="tick" text-anchor="end">60</text><line x1="352.0" y1="54.0" x2="638.0" y2="54.0" class="grid"/><text x="344.0" y="58.0" class="tick" text-anchor="end">65</text><line x1="414.9" y1="161.9" x2="575.1" y2="76.7" class="slope"/><circle cx="414.9" cy="161.9" r="6" class="pass"/><text x="414.9" y="146.9" class="ptlbl" text-anchor="middle" font-size="13">46%</text><text x="414.9" y="216.0" class="tick" text-anchor="middle" font-size="11">Discovery</text><circle cx="575.1" cy="76.7" r="6" class="pass"/><text x="575.1" y="61.7" class="ptlbl" text-anchor="middle" font-size="13">61%</text><text x="575.1" y="216.0" class="tick" text-anchor="middle" font-size="11">Marketed drugs</text><line x1="352.0" y1="196.0" x2="638.0" y2="196.0" class="ax"/><line x1="352.0" y1="54.0" x2="352.0" y2="196.0" class="ax"/></svg>
+<figcaption>Two independent measures of three-dimensionality, each higher in marketed drugs than in the discovery compounds they came from. Lovering reports a steady climb through Phase&nbsp;I&#8594;II&#8594;III rather than a jump at approval, which is what makes the trend hard to explain as survivorship alone.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">aromatic rings<br>ceiling of 3</div>
+    <div>
+      <p class="claim">More than three aromatic rings correlates with poorer developability across five independent parameters.</p>
+      <p class="detail">Solubility, lipophilicity, serum albumin binding, CYP450 inhibition and hERG inhibition all worsen past three aromatic rings. Critically, the solubility penalty persists <em>within a fixed lipophilicity range</em> &mdash; aromatic ring count is not merely a logP proxy.</p>
+      <p class="cite">Ritchie &amp; Macdonald. <span class="j">Drug Discov. Today</span> <span class="y">2009</span>, 14, 1011&ndash;1020. <a href="https://doi.org/10.1016/j.drudis.2009.07.014">10.1016/j.drudis.2009.07.014</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">ring type matters<br>carbo &gt;&gt; hetero</div>
+    <div>
+      <p class="claim">Not all rings are equally expensive: carboaromatics are the problem, heteroaliphatics are an asset.</p>
+      <p class="detail">Rank order of harm is <strong>carboaromatic &gg; heteroaromatic &gt; carboaliphatic &gt; heteroaliphatic</strong>. For solubility, Spearman R is <span class="num">0.39</span> (carboaromatic, detrimental), <span class="num">0.10</span> (heteroaromatic), <span class="num">&asymp;0.01</span> (carboaliphatic, inert) and <span class="num">0.16</span> in the <em>beneficial</em> direction for heteroaliphatic. Fused aromatic systems fare better than non-fused ones. Swapping a heteroaromatic for a carboaromatic buys lower solubility, higher protein binding and more CYP inhibition.</p>
+      <p class="cite">Ritchie, Macdonald, Young &amp; Pickett. <span class="j">Drug Discov. Today</span> <span class="y">2011</span>, 16, 164&ndash;171. <a href="https://doi.org/10.1016/j.drudis.2010.11.014">10.1016/j.drudis.2010.11.014</a></p>
+      <figure class="fig" id="fig-rings">
+<p class="fig-title">Carboaromatic versus heteroaromatic rings</p>
+<svg role="img" aria-label="Grouped horizontal bars comparing Spearman correlations for carboaromatic and heteroaromatic ring count across five endpoints. Carboaromatic is worse on every one: solubility 0.39 against 0.10, CYP2C9 0.26 against 0.12, CYP2C19 0.19 against no effect, hERG 0.18 against 0.02, CYP3A4 0.13 against 0.08." viewBox="0 0 620 318"><line x1="196.0" y1="48.0" x2="196.0" y2="270.0" class="grid"/><text x="196.0" y="40.0" class="tick" text-anchor="middle">0.0</text><line x1="281.7" y1="48.0" x2="281.7" y2="270.0" class="grid"/><text x="281.7" y="40.0" class="tick" text-anchor="middle">0.1</text><line x1="367.4" y1="48.0" x2="367.4" y2="270.0" class="grid"/><text x="367.4" y="40.0" class="tick" text-anchor="middle">0.2</text><line x1="453.1" y1="48.0" x2="453.1" y2="270.0" class="grid"/><text x="453.1" y="40.0" class="tick" text-anchor="middle">0.3</text><line x1="538.9" y1="48.0" x2="538.9" y2="270.0" class="grid"/><text x="538.9" y="40.0" class="tick" text-anchor="middle">0.4</text><text x="184.0" y="74.0" class="rowlbl" text-anchor="end" font-size="12">Aqueous solubility</text><rect x="196.0" y="58.0" width="334.3" height="13" rx="2.5" class="bar1"/><text x="537.3" y="68.5" class="vallbl" text-anchor="start" font-size="11">0.39</text><rect x="196.0" y="75.0" width="85.7" height="13" rx="2.5" class="bar2"/><text x="288.7" y="85.5" class="vallbl" text-anchor="start" font-size="11">0.10</text><text x="184.0" y="118.0" class="rowlbl" text-anchor="end" font-size="12">CYP2C9 inhibition</text><rect x="196.0" y="102.0" width="222.9" height="13" rx="2.5" class="bar1"/><text x="425.9" y="112.5" class="vallbl" text-anchor="start" font-size="11">0.26</text><rect x="196.0" y="119.0" width="102.9" height="13" rx="2.5" class="bar2"/><text x="305.9" y="129.5" class="vallbl" text-anchor="start" font-size="11">0.12</text><text x="184.0" y="162.0" class="rowlbl" text-anchor="end" font-size="12">CYP2C19 inhibition</text><rect x="196.0" y="146.0" width="162.9" height="13" rx="2.5" class="bar1"/><text x="365.9" y="156.5" class="vallbl" text-anchor="start" font-size="11">0.19</text><rect x="196.0" y="163.0" width="1.2" height="13" rx="2.5" class="bar2"/><text x="203.0" y="173.5" class="vallbl" text-anchor="start" font-size="11">no effect</text><text x="184.0" y="206.0" class="rowlbl" text-anchor="end" font-size="12">hERG inhibition</text><rect x="196.0" y="190.0" width="154.3" height="13" rx="2.5" class="bar1"/><text x="357.3" y="200.5" class="vallbl" text-anchor="start" font-size="11">0.18</text><rect x="196.0" y="207.0" width="17.1" height="13" rx="2.5" class="bar2"/><text x="220.1" y="217.5" class="vallbl" text-anchor="start" font-size="11">0.02</text><text x="184.0" y="250.0" class="rowlbl" text-anchor="end" font-size="12">CYP3A4 inhibition</text><rect x="196.0" y="234.0" width="111.4" height="13" rx="2.5" class="bar1"/><text x="314.4" y="244.5" class="vallbl" text-anchor="start" font-size="11">0.13</text><rect x="196.0" y="251.0" width="68.6" height="13" rx="2.5" class="bar2"/><text x="271.6" y="261.5" class="vallbl" text-anchor="start" font-size="11">0.08</text><line x1="196.0" y1="48.0" x2="196.0" y2="270.0" class="ax"/><text x="376.0" y="304.0" class="axlbl" text-anchor="middle" font-size="12">Spearman R &#183; higher = more detrimental</text><rect x="192" y="330" width="14" height="11" rx="2" class="bar1"/><text x="212.0" y="340.0" class="leg" text-anchor="start" font-size="11.5">Carboaromatic rings</text><rect x="364" y="330" width="14" height="11" rx="2" class="bar2"/><text x="384.0" y="340.0" class="leg" text-anchor="start" font-size="11.5">Heteroaromatic rings</text></svg>
+<figcaption>All ten correlations are in the detrimental direction, but the carbocycle is worse on every endpoint &#8212; nearly four-fold for solubility and nine-fold for hERG. Two findings do not fit on this axis: heteroaliphatic rings <em>improve</em> solubility (R&nbsp;=&nbsp;0.16 beneficial), and CYP1A2 inhibition <em>falls</em> as carboaromatic count rises (R&nbsp;=&nbsp;&#8722;0.07).</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Solubility<br>Forecast Index</div>
+    <div>
+      <p class="claim">A two-term index combining lipophilicity and aromatic count forecasts solubility better than either alone.</p>
+      <div class="eqn">SFI = ClogD<sub>7.4</sub> + (number of aromatic rings)</div>
+      <p class="detail">Derived from roughly <span class="num">100,000</span> kinetic solubility measurements. Low SFI is the target; the index makes explicit that an aromatic ring costs about as much solubility as a full logD unit.</p>
+      <p class="cite">Hill &amp; Young. <span class="j">Drug Discov. Today</span> <span class="y">2010</span>, 15, 648&ndash;655. <a href="https://doi.org/10.1016/j.drudis.2010.05.016">10.1016/j.drudis.2010.05.016</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="permeability" data-label="Permeability">
+  <div class="grp-head"><h2>Permeability &amp; absorption</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Permeability is a desolvation problem. What matters is not how many polar atoms a molecule has but how much energy it costs to strip the water off them.</p>
+
+  <article class="rule">
+    <div class="lever">logD floor<br>scales with MW</div>
+    <div>
+      <p class="claim">The minimum lipophilicity needed for permeability rises steeply with molecular weight.</p>
+      <p class="detail">For a &gt;50% chance of Caco-2 A&rarr;B P<sub>app</sub> &gt; <span class="num">100 nm/s</span>: logD &gt; <span class="num">1.7</span> at MW 350&ndash;400; &gt; <span class="num">3.1</span> at 400&ndash;450; &gt; <span class="num">3.4</span> at 450&ndash;500; &gt; <span class="num">4.5</span> above MW 500. This is the quantitative core of the Golden Triangle &mdash; a big molecule must be greasy to cross, and greasy big molecules are cleared fast.</p>
+      <p class="cite">Waring. <span class="j">Bioorg. Med. Chem. Lett.</span> <span class="y">2009</span>, 19, 2844&ndash;2851. <a href="https://doi.org/10.1016/j.bmcl.2009.03.109">10.1016/j.bmcl.2009.03.109</a></p>
+      <figure class="fig" id="fig-logdfloor">
+<p class="fig-title">The lipophilicity floor rises faster than molecular weight</p>
+<svg role="img" aria-label="Step chart of minimum logD against molecular weight band: 1.7 for 350 to 400, 3.1 for 400 to 450, 3.4 for 450 to 500, and 4.5 above 500." viewBox="0 0 620 268"><line x1="74.0" y1="196.0" x2="556.0" y2="196.0" class="grid"/><text x="64.0" y="200.0" class="tick" text-anchor="end">0</text><line x1="74.0" y1="162.4" x2="556.0" y2="162.4" class="grid"/><text x="64.0" y="166.4" class="tick" text-anchor="end">1</text><line x1="74.0" y1="128.8" x2="556.0" y2="128.8" class="grid"/><text x="64.0" y="132.8" class="tick" text-anchor="end">2</text><line x1="74.0" y1="95.2" x2="556.0" y2="95.2" class="grid"/><text x="64.0" y="99.2" class="tick" text-anchor="end">3</text><line x1="74.0" y1="61.6" x2="556.0" y2="61.6" class="grid"/><text x="64.0" y="65.6" class="tick" text-anchor="end">4</text><line x1="74.0" y1="28.0" x2="556.0" y2="28.0" class="grid"/><text x="64.0" y="32.0" class="tick" text-anchor="end">5</text><rect x="95.9" y="138.9" width="109.5" height="57.1" class="stepfill"/><line x1="95.9" y1="138.9" x2="205.5" y2="138.9" class="stepline"/><text x="150.7" y="128.9" class="ptlbl" text-anchor="middle" font-size="13">1.7</text><text x="150.7" y="214.0" class="tick" text-anchor="middle" font-size="11">350&#8211;400</text><rect x="205.5" y="91.8" width="109.5" height="104.2" class="stepfill"/><line x1="205.5" y1="91.8" x2="315.0" y2="91.8" class="stepline"/><text x="260.2" y="81.8" class="ptlbl" text-anchor="middle" font-size="13">3.1</text><text x="260.2" y="214.0" class="tick" text-anchor="middle" font-size="11">400&#8211;450</text><line x1="205.5" y1="91.8" x2="205.5" y2="138.9" class="stepriser"/><rect x="315.0" y="81.8" width="109.5" height="114.2" class="stepfill"/><line x1="315.0" y1="81.8" x2="424.5" y2="81.8" class="stepline"/><text x="369.8" y="71.8" class="ptlbl" text-anchor="middle" font-size="13">3.4</text><text x="369.8" y="214.0" class="tick" text-anchor="middle" font-size="11">450&#8211;500</text><line x1="315.0" y1="81.8" x2="315.0" y2="91.8" class="stepriser"/><rect x="424.5" y="44.8" width="131.5" height="151.2" class="stepfill"/><line x1="424.5" y1="44.8" x2="556.0" y2="44.8" class="stepline"/><text x="490.3" y="34.8" class="ptlbl" text-anchor="middle" font-size="13">4.5</text><text x="490.3" y="214.0" class="tick" text-anchor="middle" font-size="11">&gt;500</text><line x1="424.5" y1="44.8" x2="424.5" y2="81.8" class="stepriser"/><line x1="74.0" y1="196.0" x2="556.0" y2="196.0" class="ax"/><line x1="74.0" y1="28.0" x2="74.0" y2="196.0" class="ax"/><text x="315.0" y="238.0" class="axlbl" text-anchor="middle" font-size="12">molecular weight band</text><text transform="translate(24,112.0) rotate(-90)" class="axlbl" text-anchor="middle" font-size="12">minimum logD</text></svg>
+<figcaption>Minimum logD for a better-than-even chance of acceptable passive permeability. Read it alongside the clearance and hERG rules: by MW&nbsp;450&#8211;500 the logD needed for permeability has already passed the ceiling a basic compound can afford for hERG, which is what closes the Golden Triangle at its apex. Shaded: below the floor, fewer than half of compounds reach Caco-2 A&#8594;B P<sub>app</sub> &gt; 100&nbsp;nm/s. The jump from the 350&#8211;400 band to 400&#8211;450 is 1.4 logD units &#8212; the steepest step on the chart.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">optimal window<br>logD 1&ndash;3</div>
+    <div>
+      <p class="claim">The space where solubility, permeability and clearance are simultaneously acceptable is narrow.</p>
+      <p class="detail">Waring puts it at logD between roughly <span class="num">1</span> and <span class="num">3</span>. Below it, permeability fails; above it, solubility and metabolic stability fail. Most optimisation campaigns drift upward through this window rather than settling in it.</p>
+      <p class="cite">Waring. <span class="j">Expert Opin. Drug Discov.</span> <span class="y">2010</span>, 5, 235&ndash;248. <a href="https://doi.org/10.1517/17460441003605098">10.1517/17460441003605098</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">HBD &gt; HBA<br>donors cost more</div>
+    <div>
+      <p class="claim">Hydrogen-bond donors are the expensive polarity; acceptors are comparatively cheap.</p>
+      <p class="detail">Hitchcock &amp; Pennington&rsquo;s envelope for brain exposure is MW &lt; <span class="num">500</span>, PSA &lt; <span class="num">90 &Aring;&sup2;</span>, ClogP <span class="num">2&ndash;5</span>, ClogD<sub>7.4</sub> <span class="num">2&ndash;5</span>, HBD &lt; <span class="num">3</span>. Capping or masking a single NH is often the cheapest permeability fix available.</p>
+      <div class="flag"><b>Attribution</b><span>The widely quoted TPSA &lt;&nbsp;60&ndash;70 &Aring;&sup2; CNS figure is Pajouhesh &amp; Lenz&rsquo;s, not this paper&rsquo;s. Hitchcock &amp; Pennington use PSA &lt;&nbsp;90 &Aring;&sup2;.</span></div>
+      <p class="cite">Hitchcock &amp; Pennington. <span class="j">J. Med. Chem.</span> <span class="y">2006</span>, 49, 7559&ndash;7583. <a href="https://doi.org/10.1021/jm060642i">10.1021/jm060642i</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">intramolecular<br>H-bonds</div>
+    <div>
+      <p class="claim">An internal hydrogen bond can hide polarity from the membrane &mdash; but it is not a free win.</p>
+      <p class="detail">Kuhn mined the CSD and PDB for the propensity of five- to eight-membered pseudo-rings to form IMHBs, then measured matched sets. The result is explicitly conditional: the effect on permeability, solubility and lipophilicity &ldquo;depend[s] on a subtle balance between the strength of the hydrogen bond interaction, geometry of the newly formed ring system, and the relative energies of the open and closed conformations in polar and unpolar environments.&rdquo;</p>
+      <div class="flag"><b>Not a rule</b><span>Design the pseudo-ring geometry deliberately; an IMHB installed by accident can cost solubility without buying permeability.</span></div>
+      <p class="cite">Kuhn, Mohr &amp; Stahl. <span class="j">J. Med. Chem.</span> <span class="y">2010</span>, 53, 2601&ndash;2611. <a href="https://doi.org/10.1021/jm100087s">10.1021/jm100087s</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">chameleonicity<br>above MW 600</div>
+    <div>
+      <p class="claim">Past MW 600 the solubility and permeability requirements become mutually exclusive for a rigid molecule.</p>
+      <p class="detail">Good solubility needs TPSA &ge; <span class="num">0.2 &times; MW</span>; good passive permeability needs 3D PSA in a nonpolar medium &le; <span class="num">140 &Aring;&sup2;</span>. Above roughly MW <span class="num">600</span> one of these is almost always violated &mdash; so a large oral molecule must be a conformational chameleon, presenting polarity in water and burying it in membrane.</p>
+      <p class="cite">Whitty et al. <span class="j">Drug Discov. Today</span> <span class="y">2016</span>, 21, 712&ndash;717. <a href="https://doi.org/10.1016/j.drudis.2016.02.005">10.1016/j.drudis.2016.02.005</a> &middot; Review: Poongavanam, Wieske, Peintner, Erd&eacute;lyi &amp; Kihlberg. <span class="j">Nat. Rev. Chem.</span> <span class="y">2023</span>, 8, 45&ndash;60. <a href="https://doi.org/10.1038/s41570-023-00563-1">10.1038/s41570-023-00563-1</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">eNTRy rules<br>Gram-negative</div>
+    <div>
+      <p class="claim">Accumulation in <em>E. coli</em> requires an ionisable nitrogen, low three-dimensionality and rigidity.</p>
+      <p class="detail">From &gt;<span class="num">180</span> diverse compounds assayed for intracellular accumulation: a non-sterically-encumbered ionisable <strong>N</strong>itrogen (a primary amine works best), low <strong>T</strong>hree-dimensionality (globularity &le; <span class="num">0.25</span>), and <strong>R</strong>igidity (&le; <span class="num">5</span> rotatable bonds). Applying the rules converted deoxynybomycin, a Gram-positive-only agent, into a broad-spectrum antibiotic.</p>
+      <div class="flag"><b>Note</b><span>The &ldquo;eNTRy&rdquo; acronym was coined in follow-up work, not in the 2017 paper.</span></div>
+      <p class="cite">Richter, Drown, Riley, Garcia, Shirai, Svec &amp; Hergenrother. <span class="j">Nature</span> <span class="y">2017</span>, 545, 299&ndash;304. <a href="https://doi.org/10.1038/nature22308">10.1038/nature22308</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="metabolism" data-label="Metabolism">
+  <div class="grp-head"><h2>Metabolism &amp; clearance</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Lipophilicity is the single property that drives clearance, CYP inhibition and protein binding in the same direction at once.</p>
+
+  <article class="rule">
+    <div class="lever"><span class="arrow">&uarr;</span> logP<br><span class="arrow">&uarr;</span> clearance</div>
+    <div>
+      <p class="claim">Human clearance rises roughly four-fold across the practical lipophilicity range.</p>
+      <p class="detail">Median human CL is <span class="num">2.2 mL/min/kg</span> for compounds with logP &lt; 0, against <span class="num">7.8 mL/min/kg</span> for logP &gt; 4. CYP active sites are hydrophobic; partitioning into them is the rate-limiting recognition step.</p>
+      <p class="cite">Waring. <span class="j">Expert Opin. Drug Discov.</span> <span class="y">2010</span>, 5, 235&ndash;248. <a href="https://doi.org/10.1517/17460441003605098">10.1517/17460441003605098</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever"><span class="arrow">&uarr;</span> Fsp&sup3;<br><span class="arrow">&darr;</span> CYP inhibition</div>
+    <div>
+      <p class="claim">Increasing saturation and stereochemical complexity reduces both promiscuity and CYP450 inhibition.</p>
+      <p class="detail">The follow-up to <em>Escape from Flatland</em> tested the selectivity half of the hypothesis against cross-screening panel data and CYP450 inhibition data. Higher Fsp&sup3; and higher chiral-carbon count both track with fewer off-target hits &mdash; a three-dimensional molecule fits fewer pockets, including the promiscuous ones.</p>
+      <p class="cite">Lovering. <span class="j">MedChemComm</span> <span class="y">2013</span>, 4, 515&ndash;519. <a href="https://doi.org/10.1039/c2md20347b">10.1039/c2md20347b</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">carboaromatics<br><span class="arrow">&uarr;</span> CYP inhibition</div>
+    <div>
+      <p class="claim">Carbocyclic aromatic rings drive CYP inhibition roughly twice as hard as heteroaromatic ones &mdash; with one reversal.</p>
+      <p class="detail">Spearman R for carboaromatic ring count, all detrimental: CYP3A4 <span class="num">0.13</span>, 2C9 <span class="num">0.26</span>, 2C19 <span class="num">0.19</span>. Heteroaromatic count is weaker: 3A4 <span class="num">0.08</span>, 2C9 <span class="num">0.12</span>, and <em>no effect</em> on 2C19. The exception worth knowing: CYP1A2 inhibition <em>falls</em> as carboaromatic count rises (R = <span class="num">&minus;0.07</span>).</p>
+      <p class="cite">Ritchie, Macdonald, Young &amp; Pickett. <span class="j">Drug Discov. Today</span> <span class="y">2011</span>, 16, 164&ndash;171. <a href="https://doi.org/10.1016/j.drudis.2010.11.014">10.1016/j.drudis.2010.11.014</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">fluorine<br>block soft spots</div>
+    <div>
+      <p class="claim">Fluorine at a site of oxidation blocks that metabolic pathway without adding steric bulk.</p>
+      <p class="detail">The C&ndash;F bond resists CYP-mediated hydroxylation, and fluorine&rsquo;s van der Waals radius is close enough to hydrogen&rsquo;s to be tolerated in most pockets. Beyond metabolic blocking, fluorination productively influences conformation, pK<sub>a</sub>, intrinsic potency and membrane permeability &mdash; and supplies the <sup>18</sup>F handle for PET.</p>
+      <div class="flag"><b>Trade-off</b><span>Blocking one soft spot commonly reveals the next one. Metabolite ID before fluorinating, not after.</span></div>
+      <p class="cite">Gillis, Eastman, Hill, Donnelly &amp; Meanwell. <span class="j">J. Med. Chem.</span> <span class="y">2015</span>, 58, 8315&ndash;8359. <a href="https://doi.org/10.1021/acs.jmedchem.5b00258">10.1021/acs.jmedchem.5b00258</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">free drug<br>hypothesis</div>
+    <div>
+      <p class="claim">Efficacy tracks free drug <em>concentration</em> at the target, not free <em>fraction</em> &mdash; so optimising against plasma protein binding is wasted effort.</p>
+      <p class="detail">Designing to lower PPB &ldquo;yield[s] no enhancement of the in vivo free drug concentration&rdquo; and &ldquo;could result in the wrong compounds being advanced.&rdquo; A 99%-bound compound at high total exposure can deliver more free drug than a 90%-bound one at low exposure. Compare unbound concentrations against unbound potency, and stop reporting %PPB as a liability.</p>
+      <p class="cite">Smith, Di &amp; Kerns. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2010</span>, 9, 929&ndash;939. <a href="https://doi.org/10.1038/nrd3287">10.1038/nrd3287</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="potency" data-label="Potency &amp; efficiency">
+  <div class="grp-head"><h2>Potency &amp; efficiency</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Affinity per atom, not affinity. Every efficiency metric exists to catch the same failure mode: potency bought with mass and grease.</p>
+
+  <article class="rule">
+    <div class="lever">Kuntz ceiling<br>1.5 kcal/atom</div>
+    <div>
+      <p class="claim">Binding free energy rises about 1.5 kcal/mol per heavy atom for the first fifteen atoms, then essentially stops.</p>
+      <p class="detail">Across a large survey of ligand&ndash;receptor pairs, &Delta;G<sub>binding</sub> has an initial slope near <span class="num">&minus;1.5 kcal/mol</span> per non-hydrogen atom; past <span class="num">15</span> heavy atoms it &ldquo;increases very little with relative molecular mass,&rdquo; and the tightest binders plateau around <span class="num">&minus;15 kcal/mol</span> &mdash; picomolar. Everything you add after that first fifteen atoms is, on the average, paying for something other than affinity.</p>
+      <p class="cite">Kuntz, Chen, Sharp &amp; Kollman. <span class="j">Proc. Natl. Acad. Sci. USA</span> <span class="y">1999</span>, 96, 9997&ndash;10002. <a href="https://doi.org/10.1073/pnas.96.18.9997">10.1073/pnas.96.18.9997</a></p>
+      <figure class="fig" id="fig-kuntz">
+<p class="fig-title">The maximal-affinity ceiling, and what it does to ligand efficiency</p>
+<svg role="img" aria-label="Binding free energy against heavy-atom count. A curve rises steeply to about minus 11.7 kilocalories per mole by 15 heavy atoms then flattens toward a minus 15 asymptote, while a straight line representing ligand efficiency of 0.3 continues rising, reaching minus 11.4 at 38 heavy atoms." viewBox="0 0 620 332"><line x1="62.0" y1="28.0" x2="62.0" y2="290.0" class="grid"/><text x="62.0" y="308.0" class="tick" text-anchor="middle">0</text><line x1="121.3" y1="28.0" x2="121.3" y2="290.0" class="grid"/><text x="121.3" y="308.0" class="tick" text-anchor="middle">5</text><line x1="180.6" y1="28.0" x2="180.6" y2="290.0" class="grid"/><text x="180.6" y="308.0" class="tick" text-anchor="middle">10</text><line x1="239.9" y1="28.0" x2="239.9" y2="290.0" class="grid"/><text x="239.9" y="308.0" class="tick" text-anchor="middle">15</text><line x1="299.1" y1="28.0" x2="299.1" y2="290.0" class="grid"/><text x="299.1" y="308.0" class="tick" text-anchor="middle">20</text><line x1="358.4" y1="28.0" x2="358.4" y2="290.0" class="grid"/><text x="358.4" y="308.0" class="tick" text-anchor="middle">25</text><line x1="417.7" y1="28.0" x2="417.7" y2="290.0" class="grid"/><text x="417.7" y="308.0" class="tick" text-anchor="middle">30</text><line x1="477.0" y1="28.0" x2="477.0" y2="290.0" class="grid"/><text x="477.0" y="308.0" class="tick" text-anchor="middle">35</text><line x1="536.3" y1="28.0" x2="536.3" y2="290.0" class="grid"/><text x="536.3" y="308.0" class="tick" text-anchor="middle">40</text><line x1="62.0" y1="28.0" x2="560.0" y2="28.0" class="grid"/><text x="52.0" y="32.0" class="tick" text-anchor="end">0</text><line x1="62.0" y1="93.5" x2="560.0" y2="93.5" class="grid"/><text x="52.0" y="97.5" class="tick" text-anchor="end">&#8722;4</text><line x1="62.0" y1="159.0" x2="560.0" y2="159.0" class="grid"/><text x="52.0" y="163.0" class="tick" text-anchor="end">&#8722;8</text><line x1="62.0" y1="224.5" x2="560.0" y2="224.5" class="grid"/><text x="52.0" y="228.5" class="tick" text-anchor="end">&#8722;12</text><line x1="62.0" y1="290.0" x2="560.0" y2="290.0" class="grid"/><text x="52.0" y="294.0" class="tick" text-anchor="end">&#8722;16</text><line x1="62.0" y1="273.6" x2="560.0" y2="273.6" class="asym"/><text x="68.0" y="265.6" class="ann" text-anchor="start" font-size="11">plateau &#8776; &#8722;15</text><path d="M62.0,28.0 L67.9,40.0 L73.9,51.4 L79.8,62.2 L85.7,72.5 L91.6,82.3 L97.6,91.7 L103.5,100.5 L109.4,109.0 L115.4,117.0 L121.3,124.6 L127.2,131.9 L133.1,138.8 L139.1,145.4 L145.0,151.7 L150.9,157.6 L156.9,163.3 L162.8,168.6 L168.7,173.8 L174.6,178.6 L180.6,183.3 L186.5,187.7 L192.4,191.9 L198.4,195.9 L204.3,199.6 L210.2,203.3 L216.1,206.7 L222.1,209.9 L228.0,213.1 L233.9,216.0 L239.9,218.8 L245.8,221.5 L251.7,224.0 L257.6,226.5 L263.6,228.8 L269.5,230.9 L275.4,233.0 L281.4,235.0 L287.3,236.9 L293.2,238.7 L299.1,240.4 L305.1,242.0 L311.0,243.5 L316.9,245.0 L322.9,246.4 L328.8,247.7 L334.7,249.0 L340.6,250.2 L346.6,251.3 L352.5,252.4 L358.4,253.5 L364.4,254.4 L370.3,255.4 L376.2,256.3 L382.1,257.1 L388.1,257.9 L394.0,258.7 L399.9,259.4 L405.9,260.1 L411.8,260.8 L417.7,261.4 L423.6,262.0 L429.6,262.6 L435.5,263.1 L441.4,263.6 L447.4,264.1 L453.3,264.6 L459.2,265.0 L465.1,265.4 L471.1,265.8 L477.0,266.2 L482.9,266.6 L488.9,266.9 L494.8,267.2 L500.7,267.6 L506.6,267.8 L512.6,268.1 L518.5,268.4 L524.4,268.7 L530.4,268.9 L536.3,269.1 L542.2,269.3 L548.1,269.6 L554.1,269.8 L560.0,269.9" class="env"/><line x1="62.0" y1="28.0" x2="168.7" y2="249.1" class="tangent"/><text x="175.8" y="247.4" class="ann" text-anchor="start" font-size="11">slope 1.5</text><line x1="62.0" y1="28.0" x2="560.0" y2="234.3" class="le"/><text x="405.9" y="161.5" class="s2lbl" text-anchor="middle" font-size="11.5">LE = 0.3</text><circle cx="239.9" cy="218.8" r="5" class="pass"/><text x="249.9" y="222.8" class="ptlbl" text-anchor="start" font-size="11.5">15 heavy atoms</text><circle cx="512.6" cy="214.7" r="5" class="fail"/><text x="502.6" y="218.7" class="ptlbl" text-anchor="end" font-size="11.5">10 nM at 500 Da</text><line x1="62.0" y1="290.0" x2="560.0" y2="290.0" class="ax"/><line x1="62.0" y1="28.0" x2="62.0" y2="290.0" class="ax"/><text x="311.0" y="332.0" class="axlbl" text-anchor="middle" font-size="12">non-hydrogen (heavy) atoms</text><text transform="translate(16,159.0) rotate(-90)" class="axlbl" text-anchor="middle" font-size="12">&#8710;G binding (kcal/mol)</text></svg>
+<figcaption>The envelope flattens; the LE&nbsp;=&nbsp;0.3 line does not. That divergence is the whole reason ligand efficiency falls during optimisation even when potency improves &#8212; atoms keep being added on a straight line while the affinity available to buy with them runs out. Kuntz&rsquo;s stated values are the initial slope, the 15-atom knee and the &#8722;15 kcal/mol plateau; the connecting curve is illustrative. Envelope drawn as &#8710;G = &#8722;15(1 &#8722; e<sup>&#8722;0.1N</sup>), the simplest curve reproducing all three quantities the paper states; the dashed tangent shows its initial slope.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Ligand efficiency<br>LE &ge; 0.3</div>
+    <div>
+      <p class="claim">Normalise potency by heavy-atom count, and hold the line through optimisation.</p>
+      <div class="eqn">LE = &minus;&Delta;G / N<sub>heavy</sub> &nbsp;&asymp;&nbsp; 1.37 &times; pIC<sub>50</sub> / HAC</div>
+      <p class="detail">The floor is derived rather than asserted: a 10 nM compound at a 500 Da ceiling (about <span class="num">38</span> heavy atoms) requires LE &ge; <span class="num">0.29</span> kcal&middot;mol<sup>&minus;1</sup>&middot;HA<sup>&minus;1</sup>, which is where the familiar &ldquo;0.3&rdquo; comes from.</p>
+      <div class="flag"><b>Attribution</b><span>The 1.37 form is a later restatement (&minus;2.303RT at 300 K, 1 M standard state). Hopkins et al. wrote LE = &minus;&Delta;G/N.</span></div>
+      <p class="cite">Hopkins, Groom &amp; Alex. <span class="j">Drug Discov. Today</span> <span class="y">2004</span>, 9, 430&ndash;431. <a href="https://doi.org/10.1016/S1359-6446(04)03069-7">10.1016/S1359-6446(04)03069-7</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">Lipophilic efficiency<br>LLE 5&ndash;7</div>
+    <div>
+      <p class="claim">Subtract lipophilicity from potency; what remains is the potency you actually earned.</p>
+      <div class="eqn">LLE = pIC<sub>50</sub> (or pK<sub>i</sub>) &minus; cLogP</div>
+      <p class="detail">An optimised candidate should reach <span class="num">5&ndash;7</span> or greater; LLE = 6 means a millionfold preference for the target over 1-octanol. Because raising logP raises potency in almost any assay, LLE is the metric that distinguishes a better molecule from a greasier one.</p>
+      <p class="cite">Leeson &amp; Springthorpe. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2007</span>, 6, 881&ndash;890. <a href="https://doi.org/10.1038/nrd2445">10.1038/nrd2445</a> &middot; 5&ndash;7 range: Hopkins, Keser&#369;, Leeson, Rees &amp; Reynolds. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2014</span>, 13, 105&ndash;121.</p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">the gap<br>patents vs drugs</div>
+    <div>
+      <p class="claim">The median patented compound is a full logP unit greasier than the median oral drug.</p>
+      <p class="detail">Median patented compound: cLogP <span class="num">4.1</span>, MW <span class="num">450</span>. Median oral drug discovered since 1990: cLogP <span class="num">3.1</span>, MW <span class="num">432</span>. The mass difference is small; the lipophilicity difference is not. This single comparison is the empirical case for tracking LLE.</p>
+      <p class="cite">Leeson &amp; Springthorpe. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2007</span>, 6, 881&ndash;890. <a href="https://doi.org/10.1038/nrd2445">10.1038/nrd2445</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">BEI &middot; SEI<br>size &amp; polarity</div>
+    <div>
+      <p class="claim">Plot binding efficiency against surface efficiency to see whether potency is coming from bulk or from polar contacts.</p>
+      <div class="eqn">BEI = pK<sub>i</sub> / MW(kDa) &nbsp;&middot;&nbsp; SEI = pK<sub>i</sub> / (PSA / 100 &Aring;&sup2;)</div>
+      <p class="detail">The BEI/SEI plane separates series that gain potency by adding mass from those gaining it through polar interactions, which LE alone cannot distinguish.</p>
+      <p class="cite">Abad-Zapatero &amp; Metz. <span class="j">Drug Discov. Today</span> <span class="y">2005</span>, 10, 464&ndash;469. <a href="https://doi.org/10.1016/S1359-6446(05)03386-6">10.1016/S1359-6446(05)03386-6</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">magic methyl<br>&gt;100&times; possible</div>
+    <div>
+      <p class="claim">A single C&ndash;H &rarr; C&ndash;CH&#8323; substitution can improve potency more than a hundredfold &mdash; occasionally.</p>
+      <p class="detail">Methyl appears in more than <span class="num">67%</span> of the top-selling drugs of 2011, and the review catalogues cases where one methyl delivers &gt;<span class="num">100-fold</span> improvement, typically by enforcing a bound conformation or filling a small hydrophobic subpocket.</p>
+      <div class="flag"><b>Base rate</b><span>Profound methyl effects are the tail, not the distribution. Most methyl additions do very little; treat &gt;100-fold as a possibility worth testing, never an expectation.</span></div>
+      <p class="cite">Sch&ouml;nherr &amp; Cernak. <span class="j">Angew. Chem. Int. Ed.</span> <span class="y">2013</span>, 52, 12256&ndash;12267. <a href="https://doi.org/10.1002/anie.201303207">10.1002/anie.201303207</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">residence time<br>&tau; = 1/k<sub>off</sub></div>
+    <div>
+      <p class="claim">Optimise the dissociative half-life of the complex, not only its equilibrium constant.</p>
+      <p class="detail">Two compounds with identical K<sub>d</sub> can behave completely differently in vivo if their k<sub>off</sub> differs. Long residence time prolongs pharmacodynamic effect beyond the pharmacokinetic exposure window and confers <em>kinetic</em> selectivity &mdash; selectivity that an equilibrium assay simply cannot see.</p>
+      <p class="cite">Copeland, Pompliano &amp; Meek. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2006</span>, 5, 730&ndash;739. <a href="https://doi.org/10.1038/nrd2082">10.1038/nrd2082</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="safety" data-label="Safety &amp; liabilities">
+  <div class="grp-head"><h2>Safety &amp; liabilities</h2><span class="grp-count"></span></div>
+  <p class="grp-note">The same two properties &mdash; lipophilicity and basicity &mdash; account for most of the off-target liability that kills programmes.</p>
+
+  <article class="rule">
+    <div class="lever">Pfizer 3/75<br>ClogP &middot; TPSA</div>
+    <div>
+      <p class="claim">ClogP above 3 combined with TPSA below 75 &Aring;&sup2; raises the odds of in vivo toxicity roughly six-fold.</p>
+      <p class="detail">From animal in vivo toleration studies on <span class="num">245</span> preclinical Pfizer compounds. Compounds with ClogP &gt; <span class="num">3</span> and TPSA &le; <span class="num">75 &Aring;&sup2;</span> were about <span class="num">2.5&times;</span> more likely to show a finding; those with ClogP &le; 3 and TPSA &gt; 75 were about <span class="num">2.5&times;</span> more likely not to &mdash; an overall odds ratio above <span class="num">6</span>. The trend held across toxicity types and chemotypes.</p>
+      <div class="flag"><b>Contested</b><span>Muthas et al. analysed 150 preclinical and Phase I candidates and found the <em>reverse</em> &mdash; ClogP &lt;&nbsp;3 with TPSA &gt;&nbsp;75 more often associated with toxicity. 3/75 is a Pfizer-portfolio observation, not a law.</span></div>
+      <p class="cite">Hughes, Blagg, Price, Bailey, DeCrescenzo et al. <span class="j">Bioorg. Med. Chem. Lett.</span> <span class="y">2008</span>, 18, 4872&ndash;4875. <a href="https://doi.org/10.1016/j.bmcl.2008.07.071">10.1016/j.bmcl.2008.07.071</a></p>
+      <figure class="fig" id="fig-q375">
+<p class="fig-title">The 3/75 quadrant</p>
+<svg role="img" aria-label="Two by two grid of ClogP against TPSA. Compounds with ClogP at most 3 and TPSA above 75 are about 2.5 times less likely to show a toxicity finding; compounds with ClogP above 3 and TPSA at most 75 are about 2.5 times more likely to. The diagonal comparison gives an odds ratio above 6." viewBox="0 0 600 300"><defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" class="ahd"/></marker></defs><rect x="178" y="58" width="186" height="92" rx="3" class="q-good"/><text x="271.0" y="100.0" class="qbig" text-anchor="middle" font-size="24">&#8776;2.5&#215;</text><text x="271.0" y="122.0" class="qsub" text-anchor="middle" font-size="10.5">LESS likely to show a finding</text><rect x="371" y="58" width="186" height="92" rx="3" class="q-mid"/><text x="464.0" y="112.0" class="qsub" text-anchor="middle" font-size="11">intermediate</text><rect x="178" y="157" width="186" height="92" rx="3" class="q-mid"/><text x="271.0" y="211.0" class="qsub" text-anchor="middle" font-size="11">intermediate</text><rect x="371" y="157" width="186" height="92" rx="3" class="q-bad"/><text x="464.0" y="199.0" class="qbig" text-anchor="middle" font-size="24">&#8776;2.5&#215;</text><text x="464.0" y="221.0" class="qsub" text-anchor="middle" font-size="10.5">MORE likely to show a finding</text><text x="271.0" y="44.0" class="colhdr" text-anchor="middle" font-size="12">TPSA &gt; 75 &#8491;&#178;</text><text x="464.0" y="44.0" class="colhdr" text-anchor="middle" font-size="12">TPSA &#8804; 75 &#8491;&#178;</text><text transform="translate(158,104) rotate(-90)" class="colhdr" text-anchor="middle" font-size="12">ClogP &#8804; 3</text><text transform="translate(158,203) rotate(-90)" class="colhdr" text-anchor="middle" font-size="12">ClogP &gt; 3</text><path d="M271,140 L458,171" class="diag" marker-end="url(#ah3)"/><text x="367.0" y="159.0" class="ann2" text-anchor="middle" font-size="12">odds ratio &gt; 6</text></svg>
+<figcaption>The six-fold figure everyone quotes is the ratio between the two diagonal corners, not the effect of either property alone. Note what the diagram does not say: the two off-diagonal quadrants are unremarkable, so neither lipophilicity nor polarity is doing this by itself. Muthas et al. found the opposite pattern in a different 150-compound set &#8212; see the caveat in the rule below. Based on animal in vivo toleration studies of 245 preclinical Pfizer compounds.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">hERG<br>basicity costs 2 logD</div>
+    <div>
+      <p class="claim">Being basic costs roughly two log units of allowed lipophilicity before hERG becomes a problem.</p>
+      <p class="detail">For a &gt;70% chance of hERG IC<sub>50</sub> &gt; <span class="num">10 &micro;M</span>: neutral compounds need logD &lt; <span class="num">3.3</span>; basic compounds need logD &lt; <span class="num">1.4</span>. At logD 3, about <span class="num">76%</span> of neutrals clear the bar against only <span class="num">24%</span> of bases; at logD 4, <span class="num">55%</span> versus <span class="num">7%</span>. The paper&rsquo;s own conclusion is that &ldquo;lipophilicity is a stronger driver for hERG potency than might have been expected.&rdquo;</p>
+      <div class="flag"><b>Check the PDF</b><span>The four probability figures come from a citing review quoting this paper; the abstract states only that target lipophilicity values are derived.</span></div>
+      <p class="cite">Waring &amp; Johnstone. <span class="j">Bioorg. Med. Chem. Lett.</span> <span class="y">2007</span>, 17, 1759&ndash;1764. <a href="https://doi.org/10.1016/j.bmcl.2006.12.061">10.1016/j.bmcl.2006.12.061</a></p>
+      <figure class="fig" id="fig-herg">
+<p class="fig-title">What a basic centre costs you in lipophilicity</p>
+<svg role="img" aria-label="Probability of hERG IC50 above 10 micromolar against logD, for neutral and basic compounds. Neutral compounds cross 70 percent at logD 3.3; basic compounds cross it at logD 1.4, a gap of about two logD units." viewBox="0 0 620 348"><line x1="62.0" y1="28.0" x2="62.0" y2="282.0" class="grid"/><text x="62.0" y="300.0" class="tick" text-anchor="middle">0</text><line x1="157.6" y1="28.0" x2="157.6" y2="282.0" class="grid"/><text x="157.6" y="300.0" class="tick" text-anchor="middle">1</text><line x1="253.2" y1="28.0" x2="253.2" y2="282.0" class="grid"/><text x="253.2" y="300.0" class="tick" text-anchor="middle">2</text><line x1="348.8" y1="28.0" x2="348.8" y2="282.0" class="grid"/><text x="348.8" y="300.0" class="tick" text-anchor="middle">3</text><line x1="444.4" y1="28.0" x2="444.4" y2="282.0" class="grid"/><text x="444.4" y="300.0" class="tick" text-anchor="middle">4</text><line x1="540.0" y1="28.0" x2="540.0" y2="282.0" class="grid"/><text x="540.0" y="300.0" class="tick" text-anchor="middle">5</text><line x1="62.0" y1="282.0" x2="540.0" y2="282.0" class="grid"/><text x="52.0" y="286.0" class="tick" text-anchor="end">0%</text><line x1="62.0" y1="231.2" x2="540.0" y2="231.2" class="grid"/><text x="52.0" y="235.2" class="tick" text-anchor="end">20%</text><line x1="62.0" y1="180.4" x2="540.0" y2="180.4" class="grid"/><text x="52.0" y="184.4" class="tick" text-anchor="end">40%</text><line x1="62.0" y1="129.6" x2="540.0" y2="129.6" class="grid"/><text x="52.0" y="133.6" class="tick" text-anchor="end">60%</text><line x1="62.0" y1="78.8" x2="540.0" y2="78.8" class="grid"/><text x="52.0" y="82.8" class="tick" text-anchor="end">80%</text><line x1="62.0" y1="28.0" x2="540.0" y2="28.0" class="grid"/><text x="52.0" y="32.0" class="tick" text-anchor="end">100%</text><rect x="195.8" y="28.0" width="181.6" height="254.0" class="gapband"/><line x1="62.0" y1="104.2" x2="540.0" y2="104.2" class="asym"/><text x="538.0" y="96.2" class="ann" text-anchor="end" font-size="11">70% line</text><path d="M62.0,32.5 L66.8,32.7 L71.6,33.0 L76.3,33.2 L81.1,33.5 L85.9,33.7 L90.7,34.0 L95.5,34.3 L100.2,34.6 L105.0,34.9 L109.8,35.2 L114.6,35.5 L119.4,35.9 L124.1,36.3 L128.9,36.7 L133.7,37.1 L138.5,37.5 L143.3,37.9 L148.0,38.4 L152.8,38.9 L157.6,39.4 L162.4,39.9 L167.2,40.5 L171.9,41.1 L176.7,41.7 L181.5,42.3 L186.3,42.9 L191.1,43.6 L195.8,44.3 L200.6,45.1 L205.4,45.9 L210.2,46.7 L215.0,47.5 L219.7,48.4 L224.5,49.3 L229.3,50.2 L234.1,51.2 L238.9,52.3 L243.6,53.3 L248.4,54.4 L253.2,55.6 L258.0,56.8 L262.8,58.0 L267.5,59.3 L272.3,60.6 L277.1,62.0 L281.9,63.4 L286.7,64.9 L291.4,66.4 L296.2,68.0 L301.0,69.6 L305.8,71.3 L310.6,73.1 L315.3,74.8 L320.1,76.7 L324.9,78.6 L329.7,80.5 L334.5,82.6 L339.2,84.6 L344.0,86.8 L348.8,88.9 L353.6,91.2 L358.4,93.4 L363.1,95.8 L367.9,98.2 L372.7,100.6 L377.5,103.1 L382.3,105.7 L387.0,108.3 L391.8,110.9 L396.6,113.6 L401.4,116.3 L406.2,119.1 L410.9,121.9 L415.7,124.7 L420.5,127.6 L425.3,130.5 L430.1,133.4 L434.8,136.3 L439.6,139.3 L444.4,142.3 L449.2,145.3 L454.0,148.3 L458.7,151.3 L463.5,154.3 L468.3,157.4 L473.1,160.4 L477.9,163.4 L482.6,166.4 L487.4,169.4 L492.2,172.4 L497.0,175.3 L501.8,178.3 L506.5,181.2 L511.3,184.0 L516.1,186.9 L520.9,189.7 L525.7,192.5 L530.4,195.2 L535.2,197.9 L540.0,200.6" class="ser1"/><path d="M62.0,45.6 L66.8,46.7 L71.6,47.8 L76.3,48.9 L81.1,50.2 L85.9,51.5 L90.7,52.8 L95.5,54.3 L100.2,55.8 L105.0,57.4 L109.8,59.0 L114.6,60.8 L119.4,62.6 L124.1,64.5 L128.9,66.5 L133.7,68.6 L138.5,70.8 L143.3,73.0 L148.0,75.4 L152.8,77.8 L157.6,80.4 L162.4,83.0 L167.2,85.8 L171.9,88.6 L176.7,91.6 L181.5,94.6 L186.3,97.7 L191.1,100.9 L195.8,104.2 L200.6,107.6 L205.4,111.0 L210.2,114.5 L215.0,118.1 L219.7,121.8 L224.5,125.5 L229.3,129.3 L234.1,133.2 L238.9,137.0 L243.6,140.9 L248.4,144.9 L253.2,148.8 L258.0,152.8 L262.8,156.7 L267.5,160.7 L272.3,164.7 L277.1,168.6 L281.9,172.5 L286.7,176.4 L291.4,180.2 L296.2,184.0 L301.0,187.7 L305.8,191.4 L310.6,195.0 L315.3,198.6 L320.1,202.0 L324.9,205.4 L329.7,208.7 L334.5,211.9 L339.2,215.1 L344.0,218.1 L348.8,221.0 L353.6,223.9 L358.4,226.6 L363.1,229.3 L367.9,231.9 L372.7,234.3 L377.5,236.7 L382.3,239.0 L387.0,241.2 L391.8,243.3 L396.6,245.3 L401.4,247.2 L406.2,249.0 L410.9,250.8 L415.7,252.4 L420.5,254.0 L425.3,255.6 L430.1,257.0 L434.8,258.4 L439.6,259.7 L444.4,260.9 L449.2,262.1 L454.0,263.2 L458.7,264.3 L463.5,265.3 L468.3,266.2 L473.1,267.1 L477.9,268.0 L482.6,268.8 L487.4,269.5 L492.2,270.3 L497.0,270.9 L501.8,271.6 L506.5,272.2 L511.3,272.8 L516.1,273.3 L520.9,273.8 L525.7,274.3 L530.4,274.8 L535.2,275.2 L540.0,275.6" class="ser2"/><circle cx="348.8" cy="89.0" r="5" class="m1"/><text x="357.8" y="93.0" class="vallbl" text-anchor="start" font-size="11">76%</text><circle cx="444.4" cy="142.3" r="5" class="m1"/><text x="453.4" y="146.3" class="vallbl" text-anchor="start" font-size="11">55%</text><circle cx="348.8" cy="221.0" r="5" class="m2"/><text x="357.8" y="225.0" class="vallbl" text-anchor="start" font-size="11">24%</text><circle cx="444.4" cy="264.2" r="5" class="m2"/><text x="453.4" y="268.2" class="vallbl" text-anchor="start" font-size="11">7%</text><line x1="377.5" y1="104.2" x2="377.5" y2="282.0" class="thr1"/><text x="377.5" y="316.0" class="ptlbl" text-anchor="middle" font-size="11.5">logD 3.3</text><line x1="195.8" y1="104.2" x2="195.8" y2="282.0" class="thr2"/><text x="195.8" y="316.0" class="ptlbl" text-anchor="middle" font-size="11.5">logD 1.4</text><text x="286.7" y="134.7" class="ann2" text-anchor="middle" font-size="12.5">&#8776; 2 logD units</text><text x="286.7" y="155.0" class="tick" text-anchor="middle" font-size="10.5">the cost of a basic centre</text><line x1="62.0" y1="282.0" x2="540.0" y2="282.0" class="ax"/><line x1="62.0" y1="28.0" x2="62.0" y2="282.0" class="ax"/><text x="301.0" y="340.0" class="axlbl" text-anchor="middle" font-size="12">logD&#8327;.&#8324;</text><text transform="translate(14,155.0) rotate(-90)" class="axlbl" text-anchor="middle" font-size="12">P(hERG IC&#8325;&#8320; &gt; 10 &#181;M)</text><line x1="62.0" y1="358.0" x2="84.0" y2="358.0" class="ser1"/><text x="90.0" y="362.0" class="leg" text-anchor="start" font-size="11.5">Neutral</text><line x1="174.0" y1="358.0" x2="196.0" y2="358.0" class="ser2"/><text x="202.0" y="362.0" class="leg" text-anchor="start" font-size="11.5">Basic</text></svg>
+<figcaption>Two logistic curves fitted to the four quoted probabilities; both reproduce the stated thresholds to within rounding. The practical reading is the shaded band: a basic amine moves the lipophilicity ceiling down by roughly two logD units, which is usually the difference between a permeable compound and an impermeable one. Flagged in the rule below &#8212; these four figures come from a citing review, not the primary text. The dashed line marks a 70% chance of hERG IC<sub>50</sub> &gt; 10&nbsp;&#181;M; markers are the values quoted from the paper, curves are logistic fits through them.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">hERG tactics<br>what actually works</div>
+    <div>
+      <p class="claim">Five structural moves reliably attenuate hERG binding.</p>
+      <p class="detail">Lower the basic amine&rsquo;s pK<sub>a</sub>; lower logP; introduce an acidic or zwitterionic group; add steric bulk adjacent to the basic centre; reduce aromatic ring count. hERG&rsquo;s inner cavity is large and lined with aromatic residues, which is why lipophilic bases with a protonated nitrogen for cation&ndash;&pi; contact are the canonical binders.</p>
+      <div class="flag"><b>Qualitative</b><span>This is a case-based survey. Don&rsquo;t attribute a per-logP-unit coefficient to it &mdash; use Waring &amp; Johnstone for numbers.</span></div>
+      <p class="cite">Jamieson, Moir, Rankovic &amp; Wishart. <span class="j">J. Med. Chem.</span> <span class="y">2006</span>, 49, 5029&ndash;5046. <a href="https://doi.org/10.1021/jm060379l">10.1021/jm060379l</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">carboaromatics<br><span class="arrow">&uarr;</span> hERG</div>
+    <div>
+      <p class="claim">Carboaromatic rings raise hERG risk; heteroaromatic rings do not.</p>
+      <p class="detail">Spearman R = <span class="num">0.18</span> for carboaromatic ring count (detrimental) against <span class="num">0.02</span> for heteroaromatic &mdash; effectively no effect. Heteroaliphatic count gives a slight increase (R = <span class="num">0.08</span>), driven by the basic amines those rings usually carry. Swapping phenyl for pyridyl is one of the cheapest hERG mitigations available.</p>
+      <p class="cite">Ritchie, Macdonald, Young &amp; Pickett. <span class="j">Drug Discov. Today</span> <span class="y">2011</span>, 16, 164&ndash;171. <a href="https://doi.org/10.1016/j.drudis.2010.11.014">10.1016/j.drudis.2010.11.014</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">PAINS<br>480 substructures</div>
+    <div>
+      <p class="claim">A small set of substructures accounts for a large share of apparent screening hits.</p>
+      <p class="detail">From <span class="num">93,212</span> compounds across six AlphaScreen campaigns at 10&ndash;30 &micro;M, <span class="num">480</span> substructures were required to filter out all assay-interference compounds. Family A (<span class="num">16</span> filters) alone removed <span class="num">4,703</span> compounds; Family B (<span class="num">55</span>) removed <span class="num">2,196</span>; Family C (<span class="num">409</span>) removed <span class="num">1,186</span>.</p>
+      <div class="flag"><b>Use as a prompt</b><span>The filters were derived from one assay technology. A PAINS flag means &ldquo;prove this one is real,&rdquo; not &ldquo;discard&rdquo; &mdash; several approved drugs match PAINS substructures.</span></div>
+      <p class="cite">Baell &amp; Holloway. <span class="j">J. Med. Chem.</span> <span class="y">2010</span>, 53, 2719&ndash;2740. <a href="https://doi.org/10.1021/jm901137j">10.1021/jm901137j</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">colloidal<br>aggregation</div>
+    <div>
+      <p class="claim">Most promiscuous inhibitors from HTS and docking are not inhibitors at all &mdash; they are colloids that sequester enzyme.</p>
+      <p class="detail"><span class="num">35</span> of <span class="num">45</span> screening hits inhibited several unrelated model enzymes. Inhibition was reversible, attenuated by albumin, guanidinium or urea, and a <span class="num">10-fold</span> rise in enzyme concentration largely abolished it despite a <span class="num">1000-fold</span> excess of compound. Light scattering and EM showed particles <span class="num">30&ndash;400 nm</span> across.</p>
+      <p class="detail"><strong>Counter-screen:</strong> <span class="num">0.01%</span> Triton X-100 restores activity if the compound is an aggregator. Four tells: detergent sensitivity; Hill slopes &gt; <span class="num">1.5</span> (often &ge; 5); IC<sub>50</sub> that rises roughly linearly with enzyme concentration; and potency that increases on pre-incubation with protein, sometimes &gt;<span class="num">50-fold</span>.</p>
+      <p class="cite">McGovern, Caselli, Grigorieff &amp; Shoichet. <span class="j">J. Med. Chem.</span> <span class="y">2002</span>, 45, 1712&ndash;1722. <a href="https://doi.org/10.1021/jm010533y">10.1021/jm010533y</a> &middot; Protocol: Feng &amp; Shoichet. <span class="j">Nat. Protoc.</span> <span class="y">2006</span>, 1, 550&ndash;553. <a href="https://doi.org/10.1038/nprot.2006.77">10.1038/nprot.2006.77</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">structural alerts<br>bioactivation</div>
+    <div>
+      <p class="claim">Certain functional groups are bioactivated to reactive electrophiles, but the alert is a trigger for study, not a veto.</p>
+      <p class="detail">The comprehensive listing covers bioactivation pathways for anilines, thiophenes, furans, nitroaromatics, hydrazines, alkynes, quinones and the rest. The authors are explicit that the intent is &ldquo;not to &lsquo;black list&rsquo; functional groups&rdquo; &mdash; what matters is the total body burden of reactive metabolite, which depends on dose, the fraction of clearance through the bioactivation route, and the availability of competing pathways.</p>
+      <p class="cite">Kalgutkar, Gardner, Obach, Shaffer, Callegari et al. <span class="j">Curr. Drug Metab.</span> <span class="y">2005</span>, 6, 161&ndash;225. <a href="https://doi.org/10.2174/1389200054021799">10.2174/1389200054021799</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="cns" data-label="CNS">
+  <div class="grp-head"><h2>CNS penetration</h2><span class="grp-count"></span></div>
+  <p class="grp-note">The blood&ndash;brain barrier is two filters in series: passive permeability, which polarity governs, and active efflux, which basicity and polarity govern together.</p>
+
+  <article class="rule">
+    <div class="lever">CNS MPO<br>score &ge; 4 of 6</div>
+    <div>
+      <p class="claim">Six desirability functions, summed, separate CNS drugs from CNS candidates better than any single cut-off.</p>
+      <p class="detail">Each parameter scores 0&ndash;1. Full marks at: ClogP &le; <span class="num">3</span>; ClogD<sub>7.4</sub> &le; <span class="num">2</span>; MW &le; <span class="num">360</span>; TPSA <span class="num">40&ndash;90 &Aring;&sup2;</span>; HBD &le; <span class="num">0.5</span>; most basic pK<sub>a</sub> &le; <span class="num">8</span>. Zero at ClogP &gt; 5, ClogD &gt; 4, MW &gt; 500, TPSA &le; 20 or &gt; 120, HBD &gt; 3.5, pK<sub>a</sub> &gt; 10. TPSA is the only two-sided function &mdash; a plateau with ramps on both sides.</p>
+      <p class="detail"><strong>Outcome:</strong> <span class="num">74%</span> of <span class="num">119</span> marketed CNS drugs scored &ge; <span class="num">4</span>, against <span class="num">60%</span> of <span class="num">108</span> Pfizer CNS candidates. The value of the approach is that it grades rather than gates &mdash; a single breach can be paid for elsewhere.</p>
+      <p class="cite">Wager, Hou, Verhoest &amp; Villalobos. <span class="j">ACS Chem. Neurosci.</span> <span class="y">2010</span>, 1, 435&ndash;449. <a href="https://doi.org/10.1021/cn100008c">10.1021/cn100008c</a> &middot; Companion: Wager et al. <span class="j">ACS Chem. Neurosci.</span> <span class="y">2010</span>, 1, 420&ndash;434. <a href="https://doi.org/10.1021/cn100007x">10.1021/cn100007x</a></p>
+      <figure class="fig" id="fig-mpo">
+<p class="fig-title">The six CNS MPO desirability functions</p>
+<svg role="img" aria-label="Six small panels showing desirability functions scoring zero to one. ClogP full score to 3 falling to zero at 5; ClogD full to 2 falling to zero at 4; molecular weight full to 360 falling to zero at 500; TPSA zero below 20, full across 40 to 90, zero above 120; hydrogen bond donors full to 0.5 falling to zero at 3.5; most basic pKa full to 8 falling to zero at 10." viewBox="0 0 640 322"><text x="44.0" y="34.0" class="fig-sub" text-anchor="start" font-size="11.5">ClogP</text><rect x="44" y="48" width="172" height="84" class="panel"/><line x1="44.0" y1="48.0" x2="216.0" y2="48.0" class="grid"/><line x1="44.0" y1="90.0" x2="216.0" y2="90.0" class="grid"/><path d="M44.0,48.0 L130.0,48.0 L187.3,132.0 L216.0,132.0 L216.0,132.0 L44.0,132.0 Z" class="mpoarea"/><path d="M44.0,48.0 L130.0,48.0 L187.3,132.0 L216.0,132.0" class="mpoline"/><line x1="44.0" y1="132.0" x2="44.0" y2="136.0" class="ax"/><text x="44.0" y="148.0" class="tick" text-anchor="middle" font-size="10">0</text><line x1="130.0" y1="132.0" x2="130.0" y2="136.0" class="ax"/><text x="130.0" y="148.0" class="tick" text-anchor="middle" font-size="10">3</text><line x1="187.3" y1="132.0" x2="187.3" y2="136.0" class="ax"/><text x="187.3" y="148.0" class="tick" text-anchor="middle" font-size="10">5</text><text x="38.0" y="52.0" class="tick" text-anchor="end" font-size="10">1</text><text x="38.0" y="136.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="44.0" y1="132.0" x2="216.0" y2="132.0" class="ax"/><text x="256.0" y="34.0" class="fig-sub" text-anchor="start" font-size="11.5">ClogD&#8327;.&#8324;</text><rect x="256" y="48" width="172" height="84" class="panel"/><line x1="256.0" y1="48.0" x2="428.0" y2="48.0" class="grid"/><line x1="256.0" y1="90.0" x2="428.0" y2="90.0" class="grid"/><path d="M256.0,48.0 L324.8,48.0 L393.6,132.0 L428.0,132.0 L428.0,132.0 L256.0,132.0 Z" class="mpoarea"/><path d="M256.0,48.0 L324.8,48.0 L393.6,132.0 L428.0,132.0" class="mpoline"/><line x1="256.0" y1="132.0" x2="256.0" y2="136.0" class="ax"/><text x="256.0" y="148.0" class="tick" text-anchor="middle" font-size="10">0</text><line x1="324.8" y1="132.0" x2="324.8" y2="136.0" class="ax"/><text x="324.8" y="148.0" class="tick" text-anchor="middle" font-size="10">2</text><line x1="393.6" y1="132.0" x2="393.6" y2="136.0" class="ax"/><text x="393.6" y="148.0" class="tick" text-anchor="middle" font-size="10">4</text><text x="250.0" y="52.0" class="tick" text-anchor="end" font-size="10">1</text><text x="250.0" y="136.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="256.0" y1="132.0" x2="428.0" y2="132.0" class="ax"/><text x="468.0" y="34.0" class="fig-sub" text-anchor="start" font-size="11.5">MW</text><rect x="468" y="48" width="172" height="84" class="panel"/><line x1="468.0" y1="48.0" x2="640.0" y2="48.0" class="grid"/><line x1="468.0" y1="90.0" x2="640.0" y2="90.0" class="grid"/><path d="M468.0,48.0 L544.4,48.0 L611.3,132.0 L640.0,132.0 L640.0,132.0 L468.0,132.0 Z" class="mpoarea"/><path d="M468.0,48.0 L544.4,48.0 L611.3,132.0 L640.0,132.0" class="mpoline"/><line x1="468.0" y1="132.0" x2="468.0" y2="136.0" class="ax"/><text x="468.0" y="148.0" class="tick" text-anchor="middle" font-size="10">200</text><line x1="544.4" y1="132.0" x2="544.4" y2="136.0" class="ax"/><text x="544.4" y="148.0" class="tick" text-anchor="middle" font-size="10">360</text><line x1="611.3" y1="132.0" x2="611.3" y2="136.0" class="ax"/><text x="611.3" y="148.0" class="tick" text-anchor="middle" font-size="10">500</text><text x="462.0" y="52.0" class="tick" text-anchor="end" font-size="10">1</text><text x="462.0" y="136.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="468.0" y1="132.0" x2="640.0" y2="132.0" class="ax"/><text x="44.0" y="204.0" class="fig-sub" text-anchor="start" font-size="11.5">TPSA (&#8491;&#178;)</text><rect x="44" y="218" width="172" height="84" class="panel"/><line x1="44.0" y1="218.0" x2="216.0" y2="218.0" class="grid"/><line x1="44.0" y1="260.0" x2="216.0" y2="260.0" class="grid"/><path d="M44.0,302.0 L68.6,302.0 L93.1,218.0 L154.6,218.0 L191.4,302.0 L216.0,302.0 L216.0,302.0 L44.0,302.0 Z" class="mpoarea"/><path d="M44.0,302.0 L68.6,302.0 L93.1,218.0 L154.6,218.0 L191.4,302.0 L216.0,302.0" class="mpoline"/><line x1="68.6" y1="302.0" x2="68.6" y2="306.0" class="ax"/><text x="68.6" y="318.0" class="tick" text-anchor="middle" font-size="10">20</text><line x1="93.1" y1="302.0" x2="93.1" y2="306.0" class="ax"/><text x="93.1" y="318.0" class="tick" text-anchor="middle" font-size="10">40</text><line x1="154.6" y1="302.0" x2="154.6" y2="306.0" class="ax"/><text x="154.6" y="318.0" class="tick" text-anchor="middle" font-size="10">90</text><line x1="191.4" y1="302.0" x2="191.4" y2="306.0" class="ax"/><text x="191.4" y="318.0" class="tick" text-anchor="middle" font-size="10">120</text><text x="38.0" y="222.0" class="tick" text-anchor="end" font-size="10">1</text><text x="38.0" y="306.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="44.0" y1="302.0" x2="216.0" y2="302.0" class="ax"/><text x="256.0" y="204.0" class="fig-sub" text-anchor="start" font-size="11.5">HBD</text><rect x="256" y="218" width="172" height="84" class="panel"/><line x1="256.0" y1="218.0" x2="428.0" y2="218.0" class="grid"/><line x1="256.0" y1="260.0" x2="428.0" y2="260.0" class="grid"/><path d="M256.0,218.0 L277.5,218.0 L406.5,302.0 L428.0,302.0 L428.0,302.0 L256.0,302.0 Z" class="mpoarea"/><path d="M256.0,218.0 L277.5,218.0 L406.5,302.0 L428.0,302.0" class="mpoline"/><line x1="277.5" y1="302.0" x2="277.5" y2="306.0" class="ax"/><text x="277.5" y="318.0" class="tick" text-anchor="middle" font-size="10">0.5</text><line x1="406.5" y1="302.0" x2="406.5" y2="306.0" class="ax"/><text x="406.5" y="318.0" class="tick" text-anchor="middle" font-size="10">3.5</text><text x="250.0" y="222.0" class="tick" text-anchor="end" font-size="10">1</text><text x="250.0" y="306.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="256.0" y1="302.0" x2="428.0" y2="302.0" class="ax"/><text x="468.0" y="204.0" class="fig-sub" text-anchor="start" font-size="11.5">most basic pK&#8336;</text><rect x="468" y="218" width="172" height="84" class="panel"/><line x1="468.0" y1="218.0" x2="640.0" y2="218.0" class="grid"/><line x1="468.0" y1="260.0" x2="640.0" y2="260.0" class="grid"/><path d="M468.0,218.0 L566.3,218.0 L615.4,302.0 L640.0,302.0 L640.0,302.0 L468.0,302.0 Z" class="mpoarea"/><path d="M468.0,218.0 L566.3,218.0 L615.4,302.0 L640.0,302.0" class="mpoline"/><line x1="468.0" y1="302.0" x2="468.0" y2="306.0" class="ax"/><text x="468.0" y="318.0" class="tick" text-anchor="middle" font-size="10">4</text><line x1="566.3" y1="302.0" x2="566.3" y2="306.0" class="ax"/><text x="566.3" y="318.0" class="tick" text-anchor="middle" font-size="10">8</text><line x1="615.4" y1="302.0" x2="615.4" y2="306.0" class="ax"/><text x="615.4" y="318.0" class="tick" text-anchor="middle" font-size="10">10</text><text x="462.0" y="222.0" class="tick" text-anchor="end" font-size="10">1</text><text x="462.0" y="306.0" class="tick" text-anchor="end" font-size="10">0</text><line x1="468.0" y1="302.0" x2="640.0" y2="302.0" class="ax"/></svg>
+<figcaption>Drawn from the published breakpoints. Five are one-sided ramps; TPSA is the only two-sided function, penalised for being <em>too</em> polar as well as not polar enough. Because the functions are continuous, a compound can fail one outright and still clear the &#8805;&nbsp;4 threshold &#8212; which is the point of scoring rather than gating. Each parameter scores 0&#8211;1 and the six sum to a score out of 6; the filled area is full desirability.</figcaption>
+</figure>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">CNS attributes<br>Pajouhesh &amp; Lenz</div>
+    <div>
+      <p class="claim">A full profile for a successful CNS drug, physicochemical and in vitro together.</p>
+      <p class="detail">MW &le; <span class="num">450</span>; ClogP &le; <span class="num">5</span>; HBD &le; <span class="num">3</span>; HBA &le; <span class="num">7</span>; rotatable bonds &le; <span class="num">8</span>; PSA &le; <span class="num">60&ndash;70 &Aring;&sup2;</span>; pK<sub>a</sub> <span class="num">7.5&ndash;10.5</span>, neutral or basic &mdash; avoid acids; logD<sub>7.4</sub> between <span class="num">0</span> and <span class="num">3</span>; N + O count &le; <span class="num">5</span>.</p>
+      <p class="detail"><strong>And the non-physicochemical half, usually omitted:</strong> a <span class="num">30-fold</span> margin between hERG IC<sub>50</sub> and the efficacious unbound plasma concentration; &ge; <span class="num">80%</span> remaining after 1 h of metabolic stability incubation; CYP inhibition &le; <span class="num">50%</span> at <span class="num">30 &micro;M</span>; aqueous solubility &ge; <span class="num">60 &micro;g/mL</span>.</p>
+      <p class="cite">Pajouhesh &amp; Lenz. <span class="j">NeuroRx</span> <span class="y">2005</span>, 2, 541&ndash;553. <a href="https://doi.org/10.1602/neurorx.2.4.541">10.1602/neurorx.2.4.541</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">P-gp efflux<br>TPSA &middot; basic pK<sub>a</sub></div>
+    <div>
+      <p class="claim">Two properties predict P-glycoprotein substrate status with startling cleanliness.</p>
+      <p class="detail">Across &gt;<span class="num">2000</span> compounds: fewer than <span class="num">10%</span> of those with TPSA &lt; <span class="num">60 &Aring;&sup2;</span> <em>and</em> most basic cpK<sub>a</sub> &lt; <span class="num">8</span> were P-gp substrates; more than <span class="num">75%</span> were substrates when TPSA &gt; 60 <em>and</em> cpK<sub>a</sub> &gt; 8. Either property alone is a much weaker predictor than the pair.</p>
+      <div class="flag"><b>Not a donor count</b><span>The rule is framed in TPSA and basicity, not raw HBD. Desai&rsquo;s companion paper argues H-bonds are not equivalent &mdash; relative H-bond <em>strength</em> and intramolecular H-bonding govern efflux, which undercuts naive per-donor counting.</span></div>
+      <p class="cite">Desai, Sawada, Watson &amp; Raub. <span class="j">Mol. Pharm.</span> <span class="y">2013</span>, 10, 1249&ndash;1261. <a href="https://doi.org/10.1021/mp300555n">10.1021/mp300555n</a> &middot; Desai, Raub &amp; Blanco. <span class="j">Bioorg. Med. Chem. Lett.</span> <span class="y">2012</span>, 22, 6540&ndash;6548. <a href="https://doi.org/10.1016/j.bmcl.2012.08.059">10.1016/j.bmcl.2012.08.059</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="tactics" data-label="Tactics">
+  <div class="grp-head"><h2>Structural tactics</h2><span class="grp-count"></span></div>
+  <p class="grp-note">Specific moves with predictable physicochemical consequences &mdash; the vocabulary you reach for once a property has to change without losing potency.</p>
+
+  <article class="rule">
+    <div class="lever">&beta;-fluorination<br>&minus;1.7 pK<sub>a</sub> per F</div>
+    <div>
+      <p class="claim">Each fluorine beta to an amine lowers its basicity by roughly 1.7 pK<sub>a</sub> units.</p>
+      <p class="detail">The canonical series: ethylamine <span class="num">10.6</span> &rarr; 2-fluoroethylamine <span class="num">9.0</span> &rarr; 2,2-difluoroethylamine <span class="num">7.5</span> &rarr; 2,2,2-trifluoroethylamine <span class="num">5.9</span>. This is the standard route out of a hERG or P-gp problem caused by a basic centre you cannot remove.</p>
+      <div class="flag"><b>Position matters</b><span>The effect is &beta; (one carbon from N). An &alpha;-fluoroamine is not a design option &mdash; it is chemically unstable. &gamma;-Fluorine effects are much smaller.</span></div>
+      <p class="cite">Morgenthaler, Schweizer, Hoffmann-R&ouml;der, Diederich, Kansy &amp; M&uuml;ller et al. <span class="j">ChemMedChem</span> <span class="y">2007</span>, 2, 1100&ndash;1115. <a href="https://doi.org/10.1002/cmdc.200700059">10.1002/cmdc.200700059</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">methyl<br>&asymp; +0.5 logP</div>
+    <div>
+      <p class="claim">A methyl group adds about half a logP unit &mdash; and therefore costs about half a log unit of solubility.</p>
+      <p class="detail">This is the Hansch &pi; substituent constant, &pi;(CH&#8323;) &asymp; <span class="num">0.5</span>. Pair it with the magic-methyl entry above: the potency gain has to beat the lipophilicity cost, which is what an LLE calculation before and after the change will tell you.</p>
+      <p class="cite">Fujita, Iwasa &amp; Hansch. <span class="j">J. Am. Chem. Soc.</span> <span class="y">1964</span>, 86, 5175&ndash;5180. <a href="https://doi.org/10.1021/ja01077a028">10.1021/ja01077a028</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">bioisosteres<br>the substitution table</div>
+    <div>
+      <p class="claim">Most property problems have a documented replacement that preserves the binding interaction.</p>
+      <p class="detail">Carboxylic acid to tetrazole or acylsulfonamide; phenyl to bicyclo[1.1.1]pentane; amide to oxadiazole or fluoroalkene; <em>tert</em>-butyl to trifluoromethylcyclopropyl. Meanwell&rsquo;s two reviews are the standard working references &mdash; the 2018 one covers fluorinated motifs specifically, including CF&#8322;H as a lipophilic hydrogen-bond donor and CF&#8323; as a metabolically robust methyl surrogate.</p>
+      <p class="cite">Meanwell. <span class="j">J. Med. Chem.</span> <span class="y">2011</span>, 54, 2529&ndash;2591. <a href="https://doi.org/10.1021/jm1013693">10.1021/jm1013693</a> &middot; Meanwell. <span class="j">J. Med. Chem.</span> <span class="y">2018</span>, 61, 5822&ndash;5880. <a href="https://doi.org/10.1021/acs.jmedchem.7b01788">10.1021/acs.jmedchem.7b01788</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">matched pairs<br>beat rules</div>
+    <div>
+      <p class="claim">Local, transformation-specific evidence from your own series outperforms any global heuristic on this page.</p>
+      <p class="detail">Matched molecular pair analysis measures what a specific transformation did to a specific property, across every pair in a dataset where only that one change occurred. It is the correct answer whenever you have enough internal data &mdash; the rules here exist to cover the case where you do not.</p>
+      <p class="cite">Griffen, Leach, Robb &amp; Warner. <span class="j">J. Med. Chem.</span> <span class="y">2011</span>, 54, 7739&ndash;7750. <a href="https://doi.org/10.1021/jm200452d">10.1021/jm200452d</a></p>
+    </div>
+  </article>
+</section>
+
+<section class="grp" id="meta" data-label="Using rules">
+  <div class="grp-head"><h2>On using rules at all</h2><span class="grp-count"></span></div>
+  <p class="grp-note">The literature on property-based design contains its own critique. It is worth reading before leaning on any of the above.</p>
+
+  <article class="rule">
+    <div class="lever">molecular obesity<br>the failure mode</div>
+    <div>
+      <p class="claim">Property inflation during optimisation is a behavioural problem, not a chemical one.</p>
+      <p class="detail">Potency is the property that gets measured first, weekly, and by everyone &mdash; so it is the property that gets optimised, and adding mass and lipophilicity is the reliable way to improve it. Hann&rsquo;s argument is that the discipline&rsquo;s incentive structure, not its chemistry, produces overweight candidates.</p>
+      <p class="cite">Hann. <span class="j">MedChemComm</span> <span class="y">2011</span>, 2, 349&ndash;355. <a href="https://doi.org/10.1039/c1md00017a">10.1039/c1md00017a</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">nature vs nurture<br>the sweet spot</div>
+    <div>
+      <p class="claim">Some property distributions come from the target class; others come from how chemists behave.</p>
+      <p class="detail">Separating the two is the whole game. A property range that reflects what a binding site requires is a genuine constraint; one that reflects what was convenient to make is not, and following it forecloses chemical space for no reason.</p>
+      <p class="cite">Hann &amp; Keser&#369;. <span class="j">Nat. Rev. Drug Discov.</span> <span class="y">2012</span>, 11, 355&ndash;365. <a href="https://doi.org/10.1038/nrd3701">10.1038/nrd3701</a></p>
+    </div>
+  </article>
+
+  <article class="rule">
+    <div class="lever">property profiles<br>differ by route</div>
+    <div>
+      <p class="claim">&ldquo;Drug-like&rdquo; is not one distribution &mdash; drug-like, lead-like, CNS-drug-like, non-oral-drug-like and tool-like each have their own.</p>
+      <p class="detail">Lipinski&rsquo;s own retrospective on the rule&rsquo;s reception makes the point that applying an oral-absorption filter to an inhaled, injected or topical programme is a category error, and that tool compounds have no business being filtered at all.</p>
+      <p class="cite">Lipinski. <span class="j">Drug Discov. Today Technol.</span> <span class="y">2004</span>, 1, 337&ndash;341. <a href="https://doi.org/10.1016/j.ddtec.2004.11.007">10.1016/j.ddtec.2004.11.007</a></p>
+    </div>
+  </article>
+</section>
+
+</main>
+
+<p class="empty" id="empty" hidden>No rules match that search.</p>
+
+<footer>
+  <p><strong>Scope.</strong> Small-molecule, primarily oral and CNS design. Nothing here covers biologics, PROTACs, covalent inhibitors, or formulation-enabled delivery, each of which has its own envelope.</p>
+  <p>Numbers are quoted from primary sources where the full text was accessible; entries marked <em>Check the PDF</em> carry figures confirmed only through citing reviews. Every DOI links to the source &mdash; verify before quoting in a document that matters.</p>
+  <p class="noprint">Compiled September 2026. Corrections welcome.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var rules = Array.prototype.slice.call(document.querySelectorAll('.rule'));
+  var groups = Array.prototype.slice.call(document.querySelectorAll('.grp'));
+  var q = document.getElementById('q');
+  var tally = document.getElementById('tally');
+  var empty = document.getElementById('empty');
+  var chipbox = document.getElementById('chips');
+  var active = null;
+
+  rules.forEach(function(r){ r.dataset.text = r.textContent.toLowerCase().replace(/\s+/g,' '); });
+  document.getElementById('metaCount').textContent = rules.length + ' rules';
+  document.getElementById('metaCats').textContent = groups.length + ' categories';
+
+  var allChip = document.createElement('button');
+  allChip.className = 'chip'; allChip.type = 'button';
+  allChip.textContent = 'All'; allChip.setAttribute('aria-pressed','true');
+  allChip.addEventListener('click', function(){ setCat(null); });
+  chipbox.appendChild(allChip);
+
+  groups.forEach(function(g){
+    var b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button';
+    b.innerHTML = g.dataset.label;
+    b.setAttribute('aria-pressed','false');
+    b.dataset.target = g.id;
+    b.addEventListener('click', function(){ setCat(g.id); });
+    chipbox.appendChild(b);
+  });
+
+  function setCat(id){
+    active = (active === id) ? null : id;
+    Array.prototype.forEach.call(chipbox.children, function(c){
+      c.setAttribute('aria-pressed', String((c.dataset.target || null) === active));
+    });
+    apply();
+    if (active) {
+      var el = document.getElementById(active);
+      if (el) el.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+    }
+  }
+
+  function apply(){
+    var term = q.value.trim().toLowerCase();
+    var shown = 0;
+    rules.forEach(function(r){
+      var inCat = !active || r.closest('.grp').id === active;
+      var inTerm = !term || r.dataset.text.indexOf(term) !== -1;
+      var vis = inCat && inTerm;
+      r.hidden = !vis;
+      if (vis) shown++;
+    });
+    groups.forEach(function(g){
+      var n = g.querySelectorAll('.rule:not([hidden])').length;
+      g.hidden = n === 0;
+      g.querySelector('.grp-count').textContent = n === rules.length ? '' : n + (n === 1 ? ' rule' : ' rules');
+    });
+    empty.hidden = shown !== 0;
+    tally.textContent = (term || active) ? shown + ' of ' + rules.length : rules.length + ' rules';
+  }
+
+  q.addEventListener('input', apply);
+  q.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ q.value=''; apply(); } });
+
+  groups.forEach(function(g){
+    g.querySelector('.grp-count').textContent = g.querySelectorAll('.rule').length + ' rules';
+  });
+  apply();
+})();
+</script>
