@@ -3,6 +3,8 @@ layout: page
 title: Tools
 ---
 
+{% include ascii-hero.html %}
+
 Small browser-based tools I have built, mostly for computational chemistry. They
 all run entirely in your browser -- nothing to install, and no data leaves your
 machine.

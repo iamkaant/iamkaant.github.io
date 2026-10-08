@@ -1,6 +1,6 @@
 ---
 ---
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@300;400&display=swap");
 @import "minima";
 
 body {
@@ -82,4 +82,35 @@ h6 {
   font-size: 14px;
   line-height: 1.45;
   color: #5a5a5a;
+}
+
+/* ASCII reaction-diffusion field above the tools grid */
+.ascii-hero {
+  margin: 0 0 28px;
+}
+
+.ascii-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  color: #a3a3a3; // light, so the field reads as texture behind the page
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  cursor: crosshair;
+  height: 288px; // 20 rows x 14.4px; must match ROWS in reaction-diffusion.js
+}
+
+.ascii-caption {
+  margin-top: 6px;
+  min-height: 1.4em;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #828282;
 }
