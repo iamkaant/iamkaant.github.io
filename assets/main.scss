@@ -84,7 +84,7 @@ h6 {
   color: #5a5a5a;
 }
 
-/* ASCII reaction-diffusion field above the tools grid */
+/* ASCII animation above the tools grid (reaction-diffusion or molecule, see _includes/ascii-hero.html) */
 .ascii-hero {
   margin: 0 0 28px;
 }
@@ -106,6 +106,28 @@ h6 {
   height: 288px; // 20 rows x 14.4px; must match ROWS in reaction-diffusion.js
 }
 
+.ascii-molecule .ascii-field {
+  font-size: 7px;
+  height: 336px; // 40 rows x 8.4px; must match ROWS in molecule.js
+  color: #555;
+  cursor: grab;
+  touch-action: pan-y; // vertical swipes still scroll the page on phones
+
+  &:active { cursor: grabbing; }
+
+  .mBond { color: #9a9a9a; }
+  .mC    { color: #3c3c3c; }
+  .mH    { color: #a8a8a8; }
+  .mN    { color: #2f5fd0; }
+  .mO    { color: #d0412c; }
+  .mS    { color: #b8930a; }
+  .mP    { color: #d97b00; }
+  .mX    { color: #2e9e4f; }
+  .mBr   { color: #9b3b2a; }
+  .mI    { color: #7b3fa0; }
+  .mB2   { color: #c2668a; }
+}
+
 .ascii-caption {
   margin-top: 6px;
   min-height: 1.4em;
@@ -113,4 +135,9 @@ h6 {
   font-size: 11px;
   letter-spacing: 0.02em;
   color: #828282;
+}
+
+.ascii-caption a {
+  color: inherit;
+  text-decoration: underline;
 }

@@ -1,5 +1,22 @@
-<div class="ascii-hero" id="ascii-rd">
+{%- comment -%}
+ASCII animation above the tools grid. Each visit shows one of two at random:
+a Gray-Scott reaction-diffusion field, or a rotating 3D molecule.
+Force one with ?hero=reaction-diffusion or ?hero=molecule.
+{%- endcomment -%}
+<div class="ascii-hero" id="ascii-hero">
   <pre class="ascii-field" aria-hidden="true"></pre>
   <div class="ascii-caption"></div>
 </div>
-<script src="{{ '/assets/js/reaction-diffusion.js' | relative_url }}"></script>
+<script>
+(function () {
+  var kinds = ['reaction-diffusion', 'molecule'];
+  var forced = (location.search.match(/[?&]hero=([\w-]+)/) || [])[1];
+  var kind = kinds.indexOf(forced) >= 0 ? forced : kinds[Math.floor(Math.random() * kinds.length)];
+  var hero = document.getElementById('ascii-hero');
+  hero.id = kind === 'molecule' ? 'ascii-mol' : 'ascii-rd';   // the id each script looks for
+  hero.className += ' ascii-' + kind;
+  var s = document.createElement('script');
+  s.src = '{{ "/assets/js/" | relative_url }}' + kind + '.js';
+  document.body.appendChild(s);
+})();
+</script>
